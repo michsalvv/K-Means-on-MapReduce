@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-const MASTER_IP string = "localhost"
+const MASTER_IP string = "172.17.0.1"
 
 type Input struct {
 	Text       string
@@ -30,7 +30,7 @@ func main() {
 
 	grepInput := Input{Text: os.Args[2], WordToGrep: os.Args[1]}
 	var greppedText string
-	err = client.Call("Master.Grep", grepInput, &greppedText)
+	err = client.Call("Master.KMeans", grepInput, &greppedText)
 	if err != nil {
 		log.Fatal("Error in Master.Grep: ", err.Error())
 	}

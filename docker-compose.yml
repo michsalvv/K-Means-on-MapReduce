@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  kmeans-master:
+    image: docker.io/bitnami/golang:1.19
+    container_name: km-master
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    expose:
+      - '9001'
+    ports:
+      - '9001:9001'
+    volumes:
+      - ./node:/go/src/kmeans-MR
+      - ./utils:/go/src/kmeans-MR/utils
+
+  mapper:
+    image: docker.io/bitnami/golang:1.19
+    container_name: km-mapper
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    expose:
+      - '9002'
+    volumes:
+      - ./node:/go/src/kmeans-MR
+      - ./utils:/go/src/kmeans-MR/utils
+
+  reducer:
+    image: docker.io/bitnami/golang:1.19
+    container_name: km-reducer
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    expose:
+      - '9003-9004'
+    volumes:
+      - ./node:/go/src/kmeans-MR/node
+      - ./utils:/go/src/kmeans-MR/utils
