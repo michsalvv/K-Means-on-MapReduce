@@ -5,13 +5,14 @@ import (
 	"strings"
 )
 
-type Worker int
+type Mapper int
+
 type Input struct {
 	Text       string
 	WordToGrep string
 }
 
-func (w *Worker) Map(in Input, reply *string) error {
+func (w *Mapper) Map(in Input, reply *string) error {
 
 	lines := strings.Split(in.Text, "\n")
 	count := 0

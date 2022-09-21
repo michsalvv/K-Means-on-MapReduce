@@ -12,10 +12,10 @@ import (
 	"syscall"
 )
 
-func askForJoin(master string, client *rpc.Client) int {
+func askForJoin(master string, client *rpc.Client, workerType utils.WorkerType) int {
 
 	var hostname = os.Getenv("HOSTNAME")
-	reqJoin := utils.JoinRequest{IP: hostname, Type: utils.ReducerType}
+	reqJoin := utils.JoinRequest{IP: hostname, Type: workerType}
 	var reply_code int
 	err := client.Call("Master.JoinMR", reqJoin, &reply_code)
 	if err != nil {
@@ -25,10 +25,10 @@ func askForJoin(master string, client *rpc.Client) int {
 	return reply_code
 }
 
-func disconnect(master string, client *rpc.Client) {
+func disconnect(master string, client *rpc.Client, workerType utils.WorkerType) {
 
 	var reply int
-	err := client.Call("Master.ExitMR", utils.JoinRequest{IP: os.Getenv("HOSTNAME"), Type: utils.ReducerType}, &reply)
+	err := client.Call("Master.ExitMR", utils.JoinRequest{IP: os.Getenv("HOSTNAME"), Type: workerType}, &reply)
 	if err != nil {
 		log.Fatal("Fatal error trying to exit the cluster", err.Error())
 		os.Exit(-1)
@@ -37,11 +37,18 @@ func disconnect(master string, client *rpc.Client) {
 
 func main() {
 
-	if len(os.Args) < 2 {
-		fmt.Println("Please specify master address:\n\t./worker [addr:port]")
+	if len(os.Args) < 3 {
+		fmt.Println("Please specify master address and type of tasker:\n\t./worker [addr:port] [reducer/mapper]")
 		os.Exit(1)
 	}
 	addr := os.Args[1]
+	workerType := utils.DetectTaskType(os.Args[2])
+
+	if workerType == -1 {
+		log.Fatal("Please select a valid task type")
+		os.Exit(-1)
+	}
+
 	client, err := rpc.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal("Error in dialing: ", err)
@@ -52,12 +59,12 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		disconnect(addr, client)
+		disconnect(addr, client, workerType)
 		log.Printf("Disconnected")
 		os.Exit(1)
 	}()
 
-	reply := askForJoin(addr, client)
+	reply := askForJoin(addr, client, workerType)
 
 	if reply != 0 {
 		log.Printf("Request declined from Master %s", addr)
@@ -66,13 +73,19 @@ func main() {
 		log.Printf("Request accepted from Master %s", addr)
 	}
 
-	worker := new(Reducer)
 	server := rpc.NewServer()
-
-	err = server.Register(worker)
-	if err != nil {
-		log.Fatal("Error on Register(worker): ", err)
-		os.Exit(-1)
+	if workerType == utils.Mapper {
+		err = server.Register(new(Mapper))
+		if err != nil {
+			log.Fatal("Error on Register(worker): ", err)
+			os.Exit(-1)
+		}
+	} else {
+		err = server.Register(new(Reducer))
+		if err != nil {
+			log.Fatal("Error on Register(worker): ", err)
+			os.Exit(-1)
+		}
 	}
 
 	var address string = ":" + strconv.Itoa(utils.WORKER_PORT)
