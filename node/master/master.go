@@ -1,14 +1,12 @@
 package main
 
 import (
+	"kmeans-MR/utils"
 	"log"
 	"net"
 	"net/rpc"
 	"strconv"
 )
-
-const MASTER_PORT int = 9001
-const WORKER_IP string = "localhost"
 
 func main() {
 
@@ -20,11 +18,11 @@ func main() {
 		log.Fatal("Error on register(master): ", err)
 	}
 
-	var address string = ":" + strconv.Itoa(MASTER_PORT)
+	var address string = ":" + strconv.Itoa(utils.MASTER_PORT)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Error in listening:", err)
 	}
-	log.Printf("Master online on port [%d]\n", MASTER_PORT)
+	log.Printf("Master online on port [%d]\n", utils.MASTER_PORT)
 	server.Accept(lis)
 }

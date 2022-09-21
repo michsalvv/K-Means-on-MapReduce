@@ -39,10 +39,10 @@ Scale-out automatico del numero di worker:
 ## Gestione failure
 https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-implementation-12273720ff2f
 
+- spawnare 1 o più worker aggiuntivi che resteranno in idle. Nel caso in cui un mappere non finisce il job entro un tot, viene considerato failed e il master assegnerà il suo chunk ad un nuovo worker. Nel frattempo avvierà una procedura di ping per vedere se il mapper crashato è tornato online. Nel caso lo utilizzerà come worker idle. 
+
 
 # TODO
 - Quando crasha il master comunicarlo ai worker collegati (non è richiesto)
 - go env -w GO111MODULE=off
-- Ogni worker quando si connette deve comunicare IP e porta esposta dal container. Può essere fatto facendo settare delle variabili d'ambiente dal docker-compose e lette poi successivamente in Go.
-	- https://stackoverflow.com/questions/64717467/how-to-read-linux-environment-variables-in-go
-	- Forse anche nell'esempio dell'implementazione del map reduce fa qualcosa del genere ma senza virtualizzazione
+
