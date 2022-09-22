@@ -45,4 +45,5 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 # TODO
 - Quando crasha il master comunicarlo ai worker collegati (non è richiesto)
 - go env -w GO111MODULE=off
-
+- Nella relazione scrivere che è disponibile il log sul master
+- Mettere anche screen dell'esecuzione nella relazione

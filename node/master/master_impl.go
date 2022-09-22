@@ -12,6 +12,7 @@ import (
 
 func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	centroids := make([]utils.Point, kValue)
+	//TODO non sembra essere troppo randomica
 	rand.Seed(time.Now().UnixNano()) // Initialization of the source used from rand
 
 	for i := 0; i < kValue; i++ {
@@ -66,11 +67,29 @@ func readPoint(r *bufio.Reader) (utils.Point, error) {
 	return utils.Point{Values: values}, err
 }
 
-func sortResponse(channels map[int]chan [][]utils.Point) [][]utils.Point {
-	var s [][]utils.Point
+func sortResponse(channels map[int]chan utils.MapperResponse) []utils.MapperResponse {
+	var replies []utils.MapperResponse
+
 	// Waiting for #Workers replies
 	for i := 0; i < len(channels); i++ {
-		s = <-channels[i]
+		replies = append(replies, <-channels[i])
 	}
-	return s
+
+	log.Print("All the mappers responded")
+
+	return replies
+}
+
+func clusterize(mapperReplies []utils.MapperResponse, numCluster int) [][]utils.Point {
+	clusters := make([][]utils.Point, numCluster)
+
+	for _, mapperReply := range mapperReplies {
+		for clusterIndex := range mapperReply.Clusters {
+			clusters[clusterIndex] = append(clusters[clusterIndex], mapperReply.Clusters[clusterIndex]...)
+			// log.Printf("Cluster [%d] from mapper [%s] has [%d] points\n", clusterIndex, mapperReply.IP, len(mapperReply.Clusters[clusterIndex]))
+			// log.Printf("Total points of cluster [%d]: %d", clusterIndex, len(clusters[clusterIndex]))
+		}
+	}
+
+	return clusters
 }

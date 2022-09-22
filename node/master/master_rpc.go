@@ -96,22 +96,36 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *string) error {
 	chunks := splitChunks(points, len(mappers))
 	centroids := startingCentroids(points, in.Clusters)
 
-	channels := make(map[int]chan [][]utils.Point)
+	mChannels := make(map[int]chan utils.MapperResponse)
 	for index, mapper := range mappers {
-		channels[index] = make(chan [][]utils.Point)
-		defer close(channels[index])
-		go sendToMapper(chunks[index], centroids, mapper, channels[index])
+		mChannels[index] = make(chan utils.MapperResponse)
+		defer close(mChannels[index])
+		go sendToMapper(chunks[index], centroids, mapper, mChannels[index])
 	}
-	sortResponse(channels) // Funge da barriera di sincronizzazione (forse)
+	mapperReplies := sortResponse(mChannels) // Funge da barriera di sincronizzazione (forse)
+	mappedClusters := clusterize(mapperReplies, in.Clusters)
 
-	// ch := make(chan string)
-	// defer close(ch)
-	// go sendToReduce(response, reducers[0], ch)
-	// *reply = <-ch
+	// rChannels := make(map[int]chan utils.ReducerResponse)
+	// TODO l'invio ai reducer è giusto ma testo con un solo reducer al momento
+	// for index, reducer := range reducers {
+	// 	rChannels[index] = make(chan utils.ReducerResponse)
+	// 	defer close(rChannels[index])
+	// 	go sendToReducer(mappedClusters[index], reducer, rChannels[index]) // all'i-esimo reducer verranno inviati i punti assegnati all'i-esimo cluster
+	// }
+
+	red_ch := make(chan utils.ReducerResponse)
+	defer close(red_ch)
+
+	go sendToReducer(mappedClusters[0], reducers[0], red_ch)
+
+	// *reply = <-ch		// TODO vedi nel grep cos'era ch
+
+	utils.Wait()
 	return nil
 }
 
-func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan [][]utils.Point) {
+// A single Mapper receive a chunk of points and list of actual centroids
+func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan utils.MapperResponse) {
 	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
 	client, err := rpc.Dial("tcp", addr)
 	log.Print("Sendding data to mapper: ", addr)
@@ -121,29 +135,31 @@ func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.Wor
 	}
 	defer client.Close()
 
-	var reply [][]utils.Point
+	var reply utils.MapperResponse
 	err = client.Call("Mapper.Map", utils.MapperInput{Chunk: chunk, Centroids: centroids}, &reply)
 	if err != nil {
 		log.Fatal("Error in Mapper.Map: ", err.Error())
 	}
-
 	ch <- reply
 }
 
-// func sendToReduce(s string, reducer utils.WorkerInfo, ch chan string) {
-// 	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
-// 	client, err := rpc.Dial("tcp", addr)
-// 	if err != nil {
-// 		log.Fatal("Error in dialing with worker: ", err)
-// 	}
-// 	defer client.Close()
+// A single Reducer receive all points mapped to a single cluster
+func sendToReducer(s []utils.Point, reducer utils.WorkerInfo, ch chan utils.ReducerResponse) {
+	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
+	client, err := rpc.Dial("tcp", addr)
+	log.Print("Sendding data to reducer: ", addr)
 
-// 	var reply string
-// 	err = client.Call("Reducer.Reduce", s, &reply)
-// 	if err != nil {
-// 		log.Fatal("Error in Reducer.Reduce: ", err.Error())
-// 	}
+	if err != nil {
+		log.Fatal("Error in dialing with worker: ", err)
+	}
+	defer client.Close()
 
-// 	ch <- reply
+	var reply utils.ReducerResponse
+	err = client.Call("Reducer.Reduce", s, &reply)
+	if err != nil {
+		log.Fatal("Error in Reducer.Reduce: ", err.Error())
+	}
 
-// }
+	ch <- reply
+
+}

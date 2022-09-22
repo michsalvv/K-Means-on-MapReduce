@@ -3,11 +3,12 @@ package main
 import (
 	"kmeans-MR/utils"
 	"math"
+	"os"
 )
 
 type Mapper int
 
-func (w *Mapper) Map(input utils.MapperInput, reply *[][]utils.Point) error {
+func (w *Mapper) Map(input utils.MapperInput, reply *utils.MapperResponse) error {
 
 	var dimension int = len(input.Chunk[0].Values)
 	var clusters = make([][]utils.Point, 3)
@@ -32,7 +33,9 @@ func (w *Mapper) Map(input utils.MapperInput, reply *[][]utils.Point) error {
 		centroidIndex = 0
 		minDistance = 0
 	}
-	utils.ViewClusters(clusters, len(input.Centroids))
+	utils.ViewClusters(clusters, len(input.Centroids), false)
+	reply.Clusters = clusters
+	reply.IP = os.Getenv("HOSTNAME")
 	return nil
 }
 

@@ -30,13 +30,17 @@ func DetectTaskType(workerType string) WorkerType {
 }
 
 func Wait() {
+
+	log.Println("Press Enter...")
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
 
-func ViewClusters(clusters [][]Point, numClusters int) {
+func ViewClusters(clusters [][]Point, numClusters int, printCluster bool) {
 	for i := 0; i < numClusters; i++ {
-		log.Printf("Cluster #%d has %d points", i, len(clusters[i]))
-		log.Print(clusters[i])
+		log.Printf("Mapped [%d] points on cluster [#%d]", len(clusters[i]), i)
+		if printCluster {
+			log.Print(clusters[i])
+		}
 	}
 }
 
@@ -55,9 +59,19 @@ type InputKMeans struct {
 }
 
 type Point struct {
-	Values []float64
+	Values []float64 //d-dimensional
 }
 type MapperInput struct {
 	Chunk     []Point
 	Centroids []Point
+}
+
+type MapperResponse struct {
+	Clusters [][]Point //[ClusterIndex][P1, P2, P3]
+	IP       string
+}
+
+type ReducerResponse struct {
+	Centroids []Point
+	IP        string
 }
