@@ -1,6 +1,11 @@
 package utils
 
-import "strings"
+import (
+	"bufio"
+	"log"
+	"os"
+	"strings"
+)
 
 const WORKER_PORT int = 9999
 const MASTER_PORT int = 9001
@@ -24,6 +29,17 @@ func DetectTaskType(workerType string) WorkerType {
 	return WorkerType(-1)
 }
 
+func Wait() {
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+}
+
+func ViewClusters(clusters [][]Point, numClusters int) {
+	for i := 0; i < numClusters; i++ {
+		log.Printf("Cluster #%d has %d points", i, len(clusters[i]))
+		log.Print(clusters[i])
+	}
+}
+
 type JoinRequest struct {
 	IP   string
 	Type WorkerType
@@ -31,4 +47,17 @@ type JoinRequest struct {
 
 type WorkerInfo struct {
 	IP string
+}
+
+type InputKMeans struct {
+	Dataset  string
+	Clusters int
+}
+
+type Point struct {
+	Values []float64
+}
+type MapperInput struct {
+	Chunk     []Point
+	Centroids []Point
 }

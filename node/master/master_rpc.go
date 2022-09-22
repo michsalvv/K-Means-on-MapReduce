@@ -7,7 +7,6 @@ import (
 	"net/rpc"
 	"os"
 	"strconv"
-	"strings"
 )
 
 // const masterPath string = "server/master/"
@@ -16,10 +15,6 @@ var mappers []utils.WorkerInfo
 var reducers []utils.WorkerInfo
 
 type Master int
-type Input struct {
-	Text       string
-	WordToGrep string
-}
 
 func (m *Master) JoinMR(req utils.JoinRequest, reply *int) error {
 
@@ -73,130 +68,82 @@ func (m *Master) ExitMR(req utils.JoinRequest, reply *int) error {
 	return nil
 }
 
-// func (m *Master) KMeans(in Input, reply *string) error {
-// 	log.Printf("MAPPERS ONLINE: %s", mappers)
-// 	log.Printf("REDUCERS ONLINE: %s", reducers)
-// 	return nil
-// }
-
-func (m *Master) KMeans(in Input, reply *string) error {
-	if len(mappers) == 0 {
-		log.Fatal("Not possible permform grep: {0} mappers")
+func (m *Master) KMeans(in utils.InputKMeans, reply *string) error {
+	if len(mappers) == 0 || len(reducers) == 0 {
+		log.Print("Not possible to perform K-Means: insufficient workers online")
 		return nil
 	}
-	log.Printf("Grepping word {%s} on file {%s}", in.WordToGrep, in.Text)
+	log.Print("=========== START KMEANS ===========")
+	log.Printf("K-Means on {%s}: {%d} clusters", in.Dataset, in.Clusters)
 
-	file, err := os.Open(in.Text)
+	file, err := os.Open(in.Dataset)
 	if err != nil {
 		log.Print(err.Error())
-		log.Print("ESCO?")
 		return nil
 	}
 
 	reader := bufio.NewReader(file)
-	var lines []string
-	line, err := readLine(reader)
+	var points []utils.Point
+	point, err := readPoint(reader)
 	for err == nil {
-		if len(line) > 0 {
-			lines = append(lines, line)
+		if point.Values == nil {
+			break
 		}
-		line, err = readLine(reader)
+		points = append(points, point)
+		point, err = readPoint(reader)
 	}
 
-	var splittedText = splitLines(lines, len(mappers))
+	chunks := splitChunks(points, len(mappers))
+	centroids := startingCentroids(points, in.Clusters)
 
-	channels := make(map[int]chan string)
+	channels := make(map[int]chan [][]utils.Point)
 	for index, mapper := range mappers {
-		channels[index] = make(chan string)
+		channels[index] = make(chan [][]utils.Point)
 		defer close(channels[index])
-		go sendToMapper(splittedText[index], in.WordToGrep, mapper, channels[index])
+		go sendToMapper(chunks[index], centroids, mapper, channels[index])
 	}
-	var response = sortResponse(channels)
+	sortResponse(channels) // Funge da barriera di sincronizzazione (forse)
 
-	ch := make(chan string)
-	defer close(ch)
-	go sendToReduce(response, reducers[0], ch)
-	*reply = <-ch
+	// ch := make(chan string)
+	// defer close(ch)
+	// go sendToReduce(response, reducers[0], ch)
+	// *reply = <-ch
 	return nil
 }
 
-func sortResponse(channels map[int]chan string) string {
-	var s string
-	// Waiting for #Workers replies
-	for i := 0; i < len(channels); i++ {
-		s += <-channels[i]
-	}
-	return s
-}
-
-func splitLines(lines []string, chunks int) []string {
-	x := int(float64(len(lines)) / float64(chunks))
-	log.Printf("[%d Lines]\t[%d Mappers]\t%d lines for mapper", len(lines), chunks, x)
-	var offset, endOffset int
-	splittedText := make([]string, chunks)
-	for i := 0; i < chunks; i++ {
-		offset = i * x
-		if (i == chunks-1) && (chunks > 1) {
-			endOffset = len(lines)
-		} else {
-			endOffset = offset + x
-		}
-		log.Printf("mapper: %d\tfrom: %d \tto: %d\n", i, offset, endOffset)
-		for j := offset; j < endOffset; j++ {
-			splittedText[i] += lines[j] + "\n"
-		}
-		splittedText[i] = strings.TrimSuffix(splittedText[i], "\n") // Delete last \n character
-	}
-	return splittedText
-}
-func sendToMapper(lines, word string, mapper utils.WorkerInfo, ch chan string) {
+func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan [][]utils.Point) {
 	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
-	log.Print("dialing with ", addr)
 	client, err := rpc.Dial("tcp", addr)
+	log.Print("Sendding data to mapper: ", addr)
+
 	if err != nil {
 		log.Fatal("Error in dialing with worker: ", err)
 	}
 	defer client.Close()
 
-	grepInput := Input{Text: lines, WordToGrep: word}
-	var reply string
-	err = client.Call("Mapper.Map", grepInput, &reply)
+	var reply [][]utils.Point
+	err = client.Call("Mapper.Map", utils.MapperInput{Chunk: chunk, Centroids: centroids}, &reply)
 	if err != nil {
 		log.Fatal("Error in Mapper.Map: ", err.Error())
 	}
 
 	ch <- reply
-
 }
 
-func sendToReduce(s string, reducer utils.WorkerInfo, ch chan string) {
-	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
-	client, err := rpc.Dial("tcp", addr)
-	if err != nil {
-		log.Fatal("Error in dialing with worker: ", err)
-	}
-	defer client.Close()
+// func sendToReduce(s string, reducer utils.WorkerInfo, ch chan string) {
+// 	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
+// 	client, err := rpc.Dial("tcp", addr)
+// 	if err != nil {
+// 		log.Fatal("Error in dialing with worker: ", err)
+// 	}
+// 	defer client.Close()
 
-	var reply string
-	err = client.Call("Reducer.Reduce", s, &reply)
-	if err != nil {
-		log.Fatal("Error in Reducer.Reduce: ", err.Error())
-	}
+// 	var reply string
+// 	err = client.Call("Reducer.Reduce", s, &reply)
+// 	if err != nil {
+// 		log.Fatal("Error in Reducer.Reduce: ", err.Error())
+// 	}
 
-	ch <- reply
+// 	ch <- reply
 
-}
-
-// Readln returns a single line (without the ending \n) from the input buffered reader.
-func readLine(r *bufio.Reader) (string, error) {
-	var (
-		isPrefix bool  = true
-		err      error = nil
-		line, ln []byte
-	)
-	for isPrefix && err == nil {
-		line, isPrefix, err = r.ReadLine()
-		ln = append(ln, line...)
-	}
-	return string(ln), err
-}
+// }

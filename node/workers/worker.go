@@ -46,7 +46,6 @@ func main() {
 
 	if workerType == -1 {
 		log.Fatal("Please select a valid task type")
-		os.Exit(-1)
 	}
 
 	client, err := rpc.Dial("tcp", addr)
@@ -77,12 +76,14 @@ func main() {
 	if workerType == utils.Mapper {
 		err = server.Register(new(Mapper))
 		if err != nil {
+			disconnect(addr, client, workerType)
 			log.Fatal("Error on Register(worker): ", err)
 			os.Exit(-1)
 		}
 	} else {
 		err = server.Register(new(Reducer))
 		if err != nil {
+			disconnect(addr, client, workerType)
 			log.Fatal("Error on Register(worker): ", err)
 			os.Exit(-1)
 		}
@@ -91,6 +92,7 @@ func main() {
 	var address string = ":" + strconv.Itoa(utils.WORKER_PORT)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
+		disconnect(addr, client, workerType)
 		log.Fatal("Error in listening:", err)
 		os.Exit(-1)
 	}
