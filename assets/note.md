@@ -47,3 +47,4 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - go env -w GO111MODULE=off
 - Nella relazione scrivere che è disponibile il log sul master
 - Mettere anche screen dell'esecuzione nella relazione
+- Nelle slide quando spieghi una funzione metti il diagramma di flusso in cui viene usata

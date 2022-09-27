@@ -7,14 +7,14 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	centroids := make([]utils.Point, kValue)
 	//TODO non sembra essere troppo randomica
-	rand.Seed(time.Now().UnixNano()) // Initialization of the source used from rand
+	// rand.Seed(time.Now().UnixNano()) // Initialization of the source used from rand
 
+	rand.Seed(0)
 	for i := 0; i < kValue; i++ {
 		randIndex := rand.Intn(len(points))
 		log.Print("randIndex: ", randIndex)
@@ -67,8 +67,8 @@ func readPoint(r *bufio.Reader) (utils.Point, error) {
 	return utils.Point{Values: values}, err
 }
 
-func sortResponse(channels map[int]chan utils.MapperResponse) []utils.MapperResponse {
-	var replies []utils.MapperResponse
+func waitMappersResponse(channels map[int]chan string) bool {
+	var replies []string
 
 	// Waiting for #Workers replies
 	for i := 0; i < len(channels); i++ {
@@ -77,19 +77,18 @@ func sortResponse(channels map[int]chan utils.MapperResponse) []utils.MapperResp
 
 	log.Print("All the mappers responded")
 
-	return replies
+	return true
 }
 
-func clusterize(mapperReplies []utils.MapperResponse, numCluster int) [][]utils.Point {
-	clusters := make([][]utils.Point, numCluster)
+func waitReducersResponse(channels map[int]chan utils.ReducerResponse) []utils.ReducerResponse {
+	var replies []utils.ReducerResponse
 
-	for _, mapperReply := range mapperReplies {
-		for clusterIndex := range mapperReply.Clusters {
-			clusters[clusterIndex] = append(clusters[clusterIndex], mapperReply.Clusters[clusterIndex]...)
-			// log.Printf("Cluster [%d] from mapper [%s] has [%d] points\n", clusterIndex, mapperReply.IP, len(mapperReply.Clusters[clusterIndex]))
-			// log.Printf("Total points of cluster [%d]: %d", clusterIndex, len(clusters[clusterIndex]))
-		}
+	// Waiting for #Workers replies
+	for i := 0; i < len(channels); i++ {
+		replies = append(replies, <-channels[i])
 	}
 
-	return clusters
+	log.Print("All the reducers responded")
+
+	return replies
 }

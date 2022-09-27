@@ -67,11 +67,15 @@ type MapperInput struct {
 }
 
 type MapperResponse struct {
-	Clusters [][]Point //[ClusterIndex][P1, P2, P3]
-	IP       string
+	Cluster []Point
+	IP      string
 }
 
+type ReducerInput struct {
+	Mappers    []WorkerInfo
+	ClusterKey int
+}
 type ReducerResponse struct {
-	Centroids []Point
-	IP        string
+	Centroid Point
+	IP       string
 }

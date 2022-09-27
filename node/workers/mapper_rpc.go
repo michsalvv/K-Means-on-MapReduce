@@ -2,13 +2,16 @@ package main
 
 import (
 	"kmeans-MR/utils"
+	"log"
 	"math"
 	"os"
 )
 
 type Mapper int
 
-func (w *Mapper) Map(input utils.MapperInput, reply *utils.MapperResponse) error {
+var clustersPointer *[][]utils.Point
+
+func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 
 	var dimension int = len(input.Chunk[0].Values)
 	var clusters = make([][]utils.Point, 3)
@@ -34,8 +37,19 @@ func (w *Mapper) Map(input utils.MapperInput, reply *utils.MapperResponse) error
 		minDistance = 0
 	}
 	utils.ViewClusters(clusters, len(input.Centroids), false)
-	reply.Clusters = clusters
-	reply.IP = os.Getenv("HOSTNAME")
+	//TODO saveClusters()
+
+	clustersPointer = &clusters
+	*reply = os.Getenv("HOSTNAME")
+	return nil
+}
+
+// TODO forse conviene salvare i cluster calcolati nella map in locale nel mapper
+func (w *Mapper) GetClusters(input int, reply *utils.MapperResponse) error {
+	log.Print("Request recieved from reducer with clusterKey: ", input)
+
+	// log.Print((*clustersPointer)[input])
+	*reply = utils.MapperResponse{Cluster: (*clustersPointer)[input], IP: os.Getenv("HOSTNAME")}
 	return nil
 }
 
