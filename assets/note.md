@@ -52,3 +52,6 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - nelle slide mettere anche una prova che con solo 2 iterazioni non funziona
 - Troppo poca randomica la selezione dei centroidi iniziali, vedi traccia ci sta qualche info utile
 - Mettere tutto più generale, provare con k>3
+- Migliorare stampe nei nodi
+- Deployare su AWS 
+  - Forse su AWS ogni eseguibile deve essere un servizio
