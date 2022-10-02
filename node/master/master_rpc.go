@@ -68,7 +68,7 @@ func (m *Master) ExitMR(req utils.JoinRequest, reply *int) error {
 	return nil
 }
 
-func (m *Master) KMeans(in utils.InputKMeans, reply *string) error {
+func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	if len(mappers) == 0 || len(reducers) == 0 {
 		log.Print("Not possible to perform K-Means: insufficient workers online")
 		return nil
@@ -96,36 +96,51 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *string) error {
 	chunks := splitChunks(points, len(mappers))
 	centroids := startingCentroids(points, in.Clusters)
 
-	mChannels := make(map[int]chan string)
+	mChannels, rChannels := initializeChannels()
+
+	defer closeChannels(mChannels, rChannels)
+
+	// First iteration
 	for index, mapper := range mappers {
-		mChannels[index] = make(chan string)
-		defer close(mChannels[index])
 		go sendToMapper(chunks[index], centroids, mapper, mChannels[index])
 	}
+
 	// TODO aggiungi controllo sul bool di waitMappersResponse
 	waitMappersResponse(mChannels) // Funge da barriera di sincronizzazione
 
-	// Comunicate to reducer which cluster's key has to obtain.
-	// TODO controlla se il flusso map reduce è giusto
-	rChannels := make(map[int]chan utils.ReducerResponse)
-	// TODO l'invio ai reducer è giusto ma testo con un solo reducer al momento
-	// TODO mettere controllo sul numero di reducer online (#reducer == k)
-	for index, reducer := range reducers {
-		rChannels[index] = make(chan utils.ReducerResponse)
-		defer close(rChannels[index])
-		go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducer, rChannels[index]) // all'i-esimo reducer verranno inviati i punti assegnati all'i-esimo cluster
+	var reducersReplies []utils.Point
+	var iteration int = 0
+
+	//TODO mettere la prima iterazione dentro il ciclo
+	//TODO inverti ordine ciclo
+	for iteration < 1000 {
+
+		log.Printf("---- ITERATION [%d] ----", iteration+1)
+		// Comunicate to reducer which cluster's key has to obtain.
+		// TODO controlla se il flusso map reduce è giusto
+		// TODO mettere controllo sul numero di reducer online (#reducer == k)
+		for index, reducer := range reducers {
+			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducer, rChannels[index]) // all'i-esimo reducer verranno inviati i punti assegnati all'i-esimo cluster
+		}
+		reducersReplies = formalize(waitReducersResponse(rChannels)) //trova nome migliore di formalize
+
+		// logging of centroid calculated at i-iteration
+		for i, rep := range reducersReplies {
+			log.Print("Centroid #", i, ": ", rep)
+		}
+
+		for index, mapper := range mappers {
+			go sendToMapper(nil, reducersReplies, mapper, mChannels[index])
+		}
+
+		waitMappersResponse(mChannels)
+
+		iteration++
 	}
 
-	reducersReplies := waitReducersResponse(rChannels)
-	for _, rep := range reducersReplies {
-		log.Print(rep.Centroid)
-	}
+	reply.Iterations = iteration
+	reply.Centroids = reducersReplies
 
-	// mappedClusters := clusterize(mapperReplies, in.Clusters)
-
-	// *reply = <-ch		// TODO vedi nel grep cos'era ch
-
-	utils.Wait()
 	return nil
 }
 
@@ -133,7 +148,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *string) error {
 func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan string) {
 	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
 	client, err := rpc.Dial("tcp", addr)
-	log.Print("Sendding data to mapper: ", addr)
+	log.Print("Sending data to mapper: ", addr)
 
 	if err != nil {
 		log.Fatal("Error in dialing with worker: ", err)
@@ -152,7 +167,7 @@ func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.Wor
 func sendToReducer(input utils.ReducerInput, reducer utils.WorkerInfo, ch chan utils.ReducerResponse) {
 	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
 	client, err := rpc.Dial("tcp", addr)
-	log.Print("Sendding data to reducer: ", addr)
+	log.Print("Sending centroid Key to reducer: ", addr)
 
 	if err != nil {
 		log.Fatal("Error in dialing with worker: ", err)

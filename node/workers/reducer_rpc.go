@@ -10,10 +10,10 @@ import (
 
 type Reducer int
 
-var cluster []utils.Point
-
 func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) error {
 	log.Printf("Processing Cluster #[%d] ", in.ClusterKey)
+
+	var cluster []utils.Point
 	for _, mapper := range in.Mappers {
 		clusterPoints := request(mapper, in.ClusterKey).Cluster //TODO se Dial è bloccante e connessioni HTTP non vanno bene, pensare ad una go routine per reducer
 		cluster = append(cluster, clusterPoints...)
@@ -48,24 +48,18 @@ func request(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse {
 func recenter(points []utils.Point) utils.Point {
 
 	var dimension int = len(points[0].Values)
-	log.Printf("Recenter: dimension [%d]", dimension)
-
 	centroidValues := make([]float64, dimension)
 
 	for _, point := range points {
-		log.Printf("%f", point.Values)
 		for i := 0; i < dimension; i++ {
 			centroidValues[i] += point.Values[i]
 			// log.Print("updated: ", centroidValues)
 		}
 	}
-
-	log.Print(centroidValues)
 	for i := 0; i < dimension; i++ {
 		centroidValues[i] = centroidValues[i] / float64(len(points))
 	}
 
 	log.Print("Recentered centroid: ", centroidValues)
-	utils.Wait()
 	return utils.Point{Values: centroidValues}
 }

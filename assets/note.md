@@ -48,3 +48,7 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - Nella relazione scrivere che è disponibile il log sul master
 - Mettere anche screen dell'esecuzione nella relazione
 - Nelle slide quando spieghi una funzione metti il diagramma di flusso in cui viene usata
+- fare versione migliorata con combiner
+- nelle slide mettere anche una prova che con solo 2 iterazioni non funziona
+- Troppo poca randomica la selezione dei centroidi iniziali, vedi traccia ci sta qualche info utile
+- Mettere tutto più generale, provare con k>3

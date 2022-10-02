@@ -7,14 +7,15 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	centroids := make([]utils.Point, kValue)
 	//TODO non sembra essere troppo randomica
-	// rand.Seed(time.Now().UnixNano()) // Initialization of the source used from rand
+	rand.Seed(time.Now().UnixNano()) // Initialization of the source used from rand
 
-	rand.Seed(0)
+	// rand.Seed(0)
 	for i := 0; i < kValue; i++ {
 		randIndex := rand.Intn(len(points))
 		log.Print("randIndex: ", randIndex)
@@ -22,6 +23,15 @@ func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	}
 	log.Print("Starting Centroids: ", centroids)
 	return centroids
+}
+
+func formalize(replies []utils.ReducerResponse) []utils.Point {
+	var ret []utils.Point
+	for _, rep := range replies {
+		ret = append(ret, rep.Centroid)
+	}
+
+	return ret
 }
 
 func splitChunks(points []utils.Point, numberChunks int) [][]utils.Point {
@@ -67,6 +77,7 @@ func readPoint(r *bufio.Reader) (utils.Point, error) {
 	return utils.Point{Values: values}, err
 }
 
+// Barriera di sincronizzazione
 func waitMappersResponse(channels map[int]chan string) bool {
 	var replies []string
 
@@ -91,4 +102,31 @@ func waitReducersResponse(channels map[int]chan utils.ReducerResponse) []utils.R
 	log.Print("All the reducers responded")
 
 	return replies
+}
+
+func initializeChannels() (map[int]chan string, map[int]chan utils.ReducerResponse) {
+
+	mChannels := make(map[int]chan string)
+	rChannels := make(map[int]chan utils.ReducerResponse)
+
+	for index := range mappers {
+		mChannels[index] = make(chan string)
+	}
+
+	for index := range reducers {
+		rChannels[index] = make(chan utils.ReducerResponse)
+	}
+
+	return mChannels, rChannels
+}
+
+func closeChannels(mChannels map[int]chan string, rChannels map[int]chan utils.ReducerResponse) {
+	for index := range mappers {
+		close(mChannels[index])
+	}
+
+	for index := range reducers {
+		rChannels[index] = make(chan utils.ReducerResponse)
+		close(rChannels[index])
+	}
 }

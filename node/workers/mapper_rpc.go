@@ -10,15 +10,22 @@ import (
 type Mapper int
 
 var clustersPointer *[][]utils.Point
+var chunk *[]utils.Point
+var dimension int
 
 func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 
-	var dimension int = len(input.Chunk[0].Values)
-	var clusters = make([][]utils.Point, 3)
 	var minDistance float64 = 0
 	var centroidIndex int
 
-	for _, point := range input.Chunk {
+	// Retrieving of chunk ad metadata only at first iteration
+	if input.Chunk != nil {
+		chunk = &input.Chunk
+		dimension = len(input.Chunk[0].Values)
+	}
+
+	var clusters = make([][]utils.Point, len(input.Centroids)) // len(input.Centroids) is K
+	for _, point := range *chunk {
 
 		for i := 0; i < len(input.Centroids); i++ {
 			euDistance := euclideanDistance(point, input.Centroids[i], dimension) // non serve salvare le distanze, in input ai reducer servono solo i cluster composti

@@ -79,3 +79,8 @@ type ReducerResponse struct {
 	Centroid Point
 	IP       string
 }
+
+type Result struct {
+	Centroids  []Point
+	Iterations int
+}
