@@ -108,6 +108,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	// TODO aggiungi controllo sul bool di waitMappersResponse
 	waitMappersResponse(mChannels) // Funge da barriera di sincronizzazione
 
+	var prevCentroids []utils.Point
 	var reducersReplies []utils.Point
 	var iteration int = 0
 
@@ -128,6 +129,12 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		for i, rep := range reducersReplies {
 			log.Print("Centroid #", i, ": ", rep)
 		}
+		if len(prevCentroids) != 0 {
+			if convergence(reducersReplies, prevCentroids) {
+				break
+			}
+		}
+		prevCentroids = reducersReplies
 
 		for index, mapper := range mappers {
 			go sendToMapper(nil, reducersReplies, mapper, mChannels[index])

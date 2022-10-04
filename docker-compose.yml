@@ -10,6 +10,7 @@ services:
       - '9001'
     ports:
       - '9001:9001'
+    # command: sh src/kmeans-MR/init.sh master
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
@@ -20,6 +21,9 @@ services:
     tty: true # docker run -t
     expose:
       - '9999'
+    depends_on:
+      - kmeans-master
+    # command: sh src/kmeans-MR/init.sh mapper
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
@@ -28,8 +32,11 @@ services:
     image: docker.io/bitnami/golang:1.19
     stdin_open: true # docker run -i
     tty: true # docker run -t
+    depends_on:
+      - kmeans-master
     expose:
       - '9999'
+    # command: sh src/kmeans-MR/init.sh reducer
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils

@@ -34,6 +34,18 @@ func formalize(replies []utils.ReducerResponse) []utils.Point {
 	return ret
 }
 
+func convergence(actual, prev []utils.Point) bool {
+	var ratio float64
+	for i, point := range actual {
+		val := point.Values[0] - prev[i].Values[0]
+		ratio = point.Values[0] / prev[i].Values[0]
+		log.Print("CONVERGENCE: ", val, " RATIO: ", ratio)
+	}
+
+	return ratio == 1
+
+}
+
 func splitChunks(points []utils.Point, numberChunks int) [][]utils.Point {
 	x := int(float64(len(points)) / float64(numberChunks))
 	log.Printf("[%d Points]\t[%d Mappers]\t%d points for mapper", len(points), numberChunks, x)
