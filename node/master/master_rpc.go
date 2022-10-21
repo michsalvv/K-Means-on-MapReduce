@@ -7,6 +7,7 @@ import (
 	"net/rpc"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // const masterPath string = "server/master/"
@@ -69,14 +70,19 @@ func (m *Master) ExitMR(req utils.JoinRequest, reply *int) error {
 }
 
 func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
-	if len(mappers) == 0 || len(reducers) == 0 {
-		log.Print("Not possible to perform K-Means: insufficient workers online")
-		return nil
+
+	clusterError := checkAvailability(in, mappers, reducers)
+
+	if clusterError != nil {
+		return clusterError
 	}
+
 	log.Print("=========== START KMEANS ===========")
 	log.Printf("K-Means on {%s}: {%d} clusters", in.Dataset, in.Clusters)
 
-	file, err := os.Open(in.Dataset)
+	datasetPath := utils.DATASET_DIR + strings.Replace(in.Dataset, ".csv", "/", 1) + in.Dataset
+
+	file, err := os.Open(datasetPath)
 	if err != nil {
 		log.Print(err.Error())
 		return nil
@@ -96,6 +102,8 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	chunks := splitChunks(points, len(mappers))
 	centroids := startingCentroids(points, in.Clusters)
 
+	// centroids := startingCentroidsPlus(points, in.Clusters)
+
 	mChannels, rChannels := initializeChannels()
 
 	defer closeChannels(mChannels, rChannels)
@@ -110,25 +118,28 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 
 	var prevCentroids []utils.Point
 	var reducersReplies []utils.Point
-	var iteration int = 0
+	var iteration int = 1
 
 	//TODO mettere la prima iterazione dentro il ciclo
 	//TODO inverti ordine ciclo
-	for iteration < 1000 {
+	for {
 
-		log.Printf("---- ITERATION [%d] ----", iteration+1)
+		log.Printf("---- ITERATION [%d] ----", iteration)
 		// Comunicate to reducer which cluster's key has to obtain.
-		// TODO controlla se il flusso map reduce è giusto
-		// TODO mettere controllo sul numero di reducer online (#reducer == k)
-		for index, reducer := range reducers {
-			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducer, rChannels[index]) // all'i-esimo reducer verranno inviati i punti assegnati all'i-esimo cluster
+
+		for index := 0; index < in.Clusters; index++ {
+			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducers[index], rChannels[index])
 		}
-		reducersReplies = formalize(waitReducersResponse(rChannels)) //trova nome migliore di formalize
+		// for index, reducer := range reducers {
+		// 	go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducer, rChannels[index]) // all'i-esimo reducer verranno inviati i punti assegnati all'i-esimo cluster
+		// }
+		reducersReplies = formalize(waitReducersResponse(rChannels, in.Clusters)) //trova nome migliore di formalize
 
 		// logging of centroid calculated at i-iteration
 		for i, rep := range reducersReplies {
 			log.Print("Centroid #", i, ": ", rep)
 		}
+		// At the beginning prevCentroids = nil
 		if len(prevCentroids) != 0 {
 			if convergence(reducersReplies, prevCentroids) {
 				break
@@ -149,9 +160,11 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	reply.Centroids = reducersReplies
 
 	return nil
+
 }
 
 // A single Mapper receive a chunk of points and list of actual centroids
+
 func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan string) {
 	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
 	client, err := rpc.Dial("tcp", addr)
@@ -171,6 +184,7 @@ func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.Wor
 }
 
 // A single Reducer receive all points mapped to a single cluster
+
 func sendToReducer(input utils.ReducerInput, reducer utils.WorkerInfo, ch chan utils.ReducerResponse) {
 	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
 	client, err := rpc.Dial("tcp", addr)

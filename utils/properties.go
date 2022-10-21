@@ -10,6 +10,7 @@ import (
 const WORKER_PORT int = 9999
 const MASTER_PORT int = 9001
 const WORKER_IP string = "localhost"
+const DATASET_DIR string = "/go/src/kmeans-MR/datasets/"
 
 type WorkerType int
 
@@ -17,6 +18,11 @@ const (
 	Mapper  WorkerType = 1
 	Reducer WorkerType = 2
 	NONE    WorkerType = -1
+)
+
+const (
+	NO_RES_ERROR      string = "not enough resources to perform the algorithm"
+	NO_REDUCERS_ERROR string = "not enough reducers available in the cluster to perform the algorithm"
 )
 
 func DetectTaskType(workerType string) WorkerType {
@@ -83,4 +89,5 @@ type ReducerResponse struct {
 type Result struct {
 	Centroids  []Point
 	Iterations int
+	Error      int
 }

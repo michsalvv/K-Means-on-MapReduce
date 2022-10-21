@@ -2,27 +2,105 @@ package main
 
 import (
 	"bufio"
+	"crypto/rand"
+	"errors"
 	"kmeans-MR/utils"
 	"log"
-	"math/rand"
+	"math"
+	"math/big"
+
 	"strconv"
 	"strings"
-	"time"
 )
 
 func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	centroids := make([]utils.Point, kValue)
-	//TODO non sembra essere troppo randomica
-	rand.Seed(time.Now().UnixNano()) // Initialization of the source used from rand
 
-	// rand.Seed(0)
 	for i := 0; i < kValue; i++ {
-		randIndex := rand.Intn(len(points))
+		randIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(points))))
 		log.Print("randIndex: ", randIndex)
-		centroids[i] = points[randIndex]
+		centroids[i] = points[randIndex.Int64()]
 	}
 	log.Print("Starting Centroids: ", centroids)
 	return centroids
+}
+
+func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
+	dimension := len(points[0].Values)
+	centroids := make([]utils.Point, kValue)
+
+	randIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(points))))
+
+	// The first centroid is selected randomly
+	var foundedCentroid int = 0
+	centroids[foundedCentroid] = points[randIndex.Int64()]
+	foundedCentroid++
+
+	var maxDist float64
+	var farthestPoint utils.Point
+
+	// 2nd step: the point farthest away will become next centroid
+	for _, point := range points {
+		dist := euclideanDistance(point, centroids[0], dimension)
+		if dist >= maxDist {
+			maxDist = dist
+			farthestPoint = point
+		}
+	}
+	log.Print("dist: ", maxDist)
+	log.Print("farthestPoint: ", farthestPoint)
+
+	centroids[foundedCentroid] = farthestPoint
+	foundedCentroid++
+
+	// Iterate untile k centroids has been selected
+	var iteration int = 0
+	for {
+		log.Print(iteration)
+		iteration++
+		var clusters = make([][]utils.Point, kValue)
+		maxDist = 0
+		for _, point := range points {
+			var minDistance float64 = 0
+			var centroidIndex int = 0
+
+			for i := 0; i < foundedCentroid; i++ {
+				euDistance := euclideanDistance(point, centroids[i], dimension)
+
+				if euDistance <= minDistance || i == 0 {
+					minDistance = euDistance
+					centroidIndex = i
+				}
+				if euDistance >= maxDist {
+					maxDist = euDistance
+					farthestPoint = point
+				}
+			}
+
+			clusters[centroidIndex] = append(clusters[centroidIndex], point)
+			centroidIndex = 0
+			minDistance = 0
+		}
+
+		centroids[foundedCentroid] = farthestPoint
+		foundedCentroid++ // must be updated before check beacuse it's start from 0
+		if foundedCentroid == kValue {
+			break
+		}
+	}
+	log.Print(centroids)
+	return centroids
+}
+
+func euclideanDistance(point, centroid utils.Point, d int) float64 {
+	var distance float64
+	pointVals := point.Values
+	centroidVals := centroid.Values
+
+	for i := 0; i < d; i++ {
+		distance += math.Pow(pointVals[i]-centroidVals[i], 2)
+	}
+	return math.Sqrt(distance)
 }
 
 func formalize(replies []utils.ReducerResponse) []utils.Point {
@@ -36,13 +114,19 @@ func formalize(replies []utils.ReducerResponse) []utils.Point {
 
 func convergence(actual, prev []utils.Point) bool {
 	var ratio float64
+	var dimension int = len(actual[0].Values)
+
 	for i, point := range actual {
-		val := point.Values[0] - prev[i].Values[0]
-		ratio = point.Values[0] / prev[i].Values[0]
-		log.Print("CONVERGENCE: ", val, " RATIO: ", ratio)
+		for j := 0; j < dimension; j++ {
+			ratio = point.Values[j] - prev[i].Values[j]
+			log.Print("CONVERGENCE: ", ratio)
+			if ratio != 0 {
+				return false
+			}
+		}
 	}
 
-	return ratio == 1
+	return true
 
 }
 
@@ -103,11 +187,11 @@ func waitMappersResponse(channels map[int]chan string) bool {
 	return true
 }
 
-func waitReducersResponse(channels map[int]chan utils.ReducerResponse) []utils.ReducerResponse {
+func waitReducersResponse(channels map[int]chan utils.ReducerResponse, dutyReducers int) []utils.ReducerResponse {
 	var replies []utils.ReducerResponse
 
-	// Waiting for #Workers replies
-	for i := 0; i < len(channels); i++ {
+	// Waiting for reducers replies
+	for i := 0; i < dutyReducers; i++ {
 		replies = append(replies, <-channels[i])
 	}
 
@@ -141,4 +225,18 @@ func closeChannels(mChannels map[int]chan string, rChannels map[int]chan utils.R
 		rChannels[index] = make(chan utils.ReducerResponse)
 		close(rChannels[index])
 	}
+}
+
+func checkAvailability(inputData utils.InputKMeans, mappers, reducers []utils.WorkerInfo) error {
+	if len(mappers) == 0 || len(reducers) == 0 {
+		log.Print(utils.NO_RES_ERROR)
+		return errors.New(utils.NO_RES_ERROR)
+	}
+
+	if len(reducers) < inputData.Clusters {
+		log.Print(utils.NO_REDUCERS_ERROR)
+		return errors.New(utils.NO_REDUCERS_ERROR)
+	}
+
+	return nil
 }

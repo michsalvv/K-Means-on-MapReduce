@@ -35,7 +35,7 @@ func main() {
 
 	err = client.Call("Master.KMeans", kmeansInput, &finalResult)
 	if err != nil {
-		log.Fatal("Error in Master.KMeans: ", err.Error())
+		log.Fatal("Error in Master.KMeans: \n", err.Error())
 	}
 	if saveResults(finalResult, datasetName) {
 		log.Printf("Use client/check_results.py to validate the results")

@@ -55,3 +55,22 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - Migliorare stampe nei nodi
 - Deployare su AWS 
   - Forse su AWS ogni eseguibile deve essere un servizio
+- Nella relazione scrivere come il client comunica il path del dataset al master e come il master lo cerca nella directory
+  - scrivere anche che comunque è un aspetto secondario poichè il servizio è offerto in modo distribuito solamente in locale
+
+- usare sklearn per trovare i veri cluster per confrontare risultati
+- nei risultati escludere gli outlier
+  - salvare i risultati in csv [tempo esecuzione; numero iterazioni]
+
+MIGLIORARE CONVERGENZA
+
+
+## Discussione su random initiliazionation
+When initializing the centroids, it is important that the initially selected points are fairly apart. If the points are too close together, there is a good chance the points will find a cluster in their local region and the actual cluster will be blended with another cluster.
+
+When randomly initializing centroids, we have no control over where their initial position will be.
+
+Unfortunately, Lloyd does suffer greatly from a problem many clustering algorithms face. That is, that the forming of clusters is heavily influenced by the choosing of initial centroids. Or in more mathematical terms. Lloyd might get stuck in a local optima, depending on its initialization.
+
+L'inizializzazione tramite kMeans++ migliora ma non troppo, fai vedere differenze con inizializzione randomica. 
+Secondo me funziona poco bene sui dataset piccoli perchè se la selezione randomica è particolarmente sfortunata, l'algoritmo avrà pochi punti per convergere e quindi tenterà a oscillare vicino ad una falsa convergenza. 
