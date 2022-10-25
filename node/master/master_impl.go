@@ -25,6 +25,7 @@ func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	return centroids
 }
 
+// TODO rimuovere il centroide dall'insieme dei punti una volta scelto, perchè se viene scelto lo stesso centroide due volte, ad un reducer non verrà inviato nulla
 func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 	dimension := len(points[0].Values)
 	centroids := make([]utils.Point, kValue)
@@ -120,7 +121,7 @@ func convergence(actual, prev []utils.Point) bool {
 		for j := 0; j < dimension; j++ {
 			ratio = point.Values[j] - prev[i].Values[j]
 			log.Print("CONVERGENCE: ", ratio)
-			if ratio != 0 {
+			if ratio > 0.001 { //TODO define configurable threshold
 				return false
 			}
 		}

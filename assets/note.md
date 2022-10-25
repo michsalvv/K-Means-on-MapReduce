@@ -74,3 +74,7 @@ Unfortunately, Lloyd does suffer greatly from a problem many clustering algorith
 
 L'inizializzazione tramite kMeans++ migliora ma non troppo, fai vedere differenze con inizializzione randomica. 
 Secondo me funziona poco bene sui dataset piccoli perchè se la selezione randomica è particolarmente sfortunata, l'algoritmo avrà pochi punti per convergere e quindi tenterà a oscillare vicino ad una falsa convergenza. 
+
+Kmeans ++ non funziona troppo bene, prova con 4d cluster grosso
+
+Per giustificare il fatto che di solito scoppia con kmeans standrd, scoppia quando i centroidi iniziali vengono scelti troppo vicini tra loro. 

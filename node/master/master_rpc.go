@@ -100,9 +100,9 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	}
 
 	chunks := splitChunks(points, len(mappers))
-	centroids := startingCentroids(points, in.Clusters)
+	// centroids := startingCentroids(points, in.Clusters)
 
-	// centroids := startingCentroidsPlus(points, in.Clusters)
+	centroids := startingCentroidsPlus(points, in.Clusters)
 
 	mChannels, rChannels := initializeChannels()
 
@@ -141,7 +141,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		}
 		// At the beginning prevCentroids = nil
 		if len(prevCentroids) != 0 {
-			if convergence(reducersReplies, prevCentroids) {
+			if convergence(reducersReplies, prevCentroids) { //TODO cercare una migliore convergenza
 				break
 			}
 		}

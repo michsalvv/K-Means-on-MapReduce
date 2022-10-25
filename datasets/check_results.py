@@ -33,7 +33,7 @@ dataset = pd.read_csv(datasetFilename,
 
 plt.scatter(dataset.iloc[:, 0], dataset.iloc[:, 1], c='#3f81ba',
             label='Dataset')
-plt.scatter(x=centroids.iloc[:, 0], y=centroids.iloc[:, 1], c='#d94638',
+plt.scatter(x=centroids.iloc[:, 0], y=centroids.iloc[:, 1], c='#d94638', edgecolors='black',
             label='K-Means centroids')
 plt.xlabel("x")
 plt.ylabel("y")
