@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-
 	master := new(Master)
 
 	server := rpc.NewServer()
@@ -23,6 +22,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Error in listening:", err)
 	}
-	log.Printf("Master online on port [%d]\n", utils.MASTER_PORT)
+	log.Printf("Master online on port [%d]\n\n", utils.MASTER_PORT)
 	server.Accept(lis)
 }

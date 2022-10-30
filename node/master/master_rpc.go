@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"kmeans-MR/utils"
 	"log"
 	"net/rpc"
@@ -76,9 +77,10 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	if clusterError != nil {
 		return clusterError
 	}
-
-	log.Print("=========== START KMEANS ===========")
-	log.Printf("K-Means on {%s}: {%d} clusters", in.Dataset, in.Clusters)
+	fmt.Print("\n\n")
+	log.Print("--------------------------------------------------------")
+	log.Printf("Starting K-Means Clustering")
+	log.Printf("Dataset: {%s}", in.Dataset)
 
 	datasetPath := utils.DATASET_DIR + strings.Replace(in.Dataset, ".csv", "/", 1) + in.Dataset
 
@@ -99,63 +101,55 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		point, err = readPoint(reader)
 	}
 
+	log.Printf("Dataset Instances: {%d}", len(points))
+
 	chunks := splitChunks(points, len(mappers))
-	// centroids := startingCentroids(points, in.Clusters)
 
-	centroids := startingCentroidsPlus(points, in.Clusters)
+	// centroids := startingCentroids(points, in.Clusters)		// Standard Centroids Initialization
+	centroids := startingCentroidsPlus(points, in.Clusters) // KMeans++ Implementation
 
+	log.Print("--------------------------------------------------------")
 	mChannels, rChannels := initializeChannels()
 
 	defer closeChannels(mChannels, rChannels)
 
-	// First iteration
-	for index, mapper := range mappers {
-		go sendToMapper(chunks[index], centroids, mapper, mChannels[index])
-	}
-
-	// TODO aggiungi controllo sul bool di waitMappersResponse
-	waitMappersResponse(mChannels) // Funge da barriera di sincronizzazione
-
-	var prevCentroids []utils.Point
 	var reducersReplies []utils.Point
 	var iteration int = 1
 
-	//TODO mettere la prima iterazione dentro il ciclo
-	//TODO inverti ordine ciclo
 	for {
+		fmt.Print("\n")
+		log.Printf("---- Iteration [%d] ----", iteration)
 
-		log.Printf("---- ITERATION [%d] ----", iteration)
+		for index, mapper := range mappers {
+			go sendToMapper(chunks[index], centroids, mapper, mChannels[index])
+		}
+		// sync barrier
+		waitMappersResponse(mChannels)
+
 		// Comunicate to reducer which cluster's key has to obtain.
-
 		for index := 0; index < in.Clusters; index++ {
 			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducers[index], rChannels[index])
 		}
+		log.Printf("Waiting for replies from reducers\n\n")
 		reducersReplies = formalize(waitReducersResponse(rChannels, in.Clusters)) //trova nome migliore di formalize
 
 		// logging of centroid calculated at i-iteration
 		for i, rep := range reducersReplies {
-			log.Print("Centroid #", i, ": ", rep)
+			log.Printf("New Centroid #%d: %v", i, rep.Values)
 		}
-		// At the beginning prevCentroids = nil
-		if len(prevCentroids) != 0 {
-			if convergence(reducersReplies, prevCentroids) {
-				break
-			}
+		if convergence(reducersReplies, centroids) {
+			centroids = reducersReplies
+			break
 		}
-		prevCentroids = reducersReplies
-
-		for index, mapper := range mappers {
-			go sendToMapper(nil, reducersReplies, mapper, mChannels[index])
-		}
-
-		waitMappersResponse(mChannels)
-
+		centroids = reducersReplies
 		iteration++
 	}
 
 	reply.Iterations = iteration
-	reply.Centroids = reducersReplies
-
+	reply.Centroids = centroids
+	log.Print("--------------------------------------------------------")
+	log.Print("Convergence achieved, the results were sent to the customer")
+	log.Print("--------------------------------------------------------\n")
 	return nil
 
 }
@@ -165,7 +159,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan string) {
 	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
 	client, err := rpc.Dial("tcp", addr)
-	log.Print("Sending data to mapper: ", addr)
+	log.Print("Sending chunks to mapper: ", addr)
 
 	if err != nil {
 		log.Fatal("Error in dialing with worker: ", err)

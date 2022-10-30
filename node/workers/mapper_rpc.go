@@ -28,12 +28,9 @@ func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 	for _, point := range *chunk {
 
 		for i := 0; i < len(input.Centroids); i++ {
-			euDistance := euclideanDistance(point, input.Centroids[i], dimension) // non serve salvare le distanze, in input ai reducer servono solo i cluster composti
-			// log.Printf("Distance from centroid #%d: %f", i, euDistance)
-
+			euDistance := euclideanDistance(point, input.Centroids[i], dimension)
 			// first distance calculated should be setted as min (i==0)
 			if euDistance <= minDistance || i == 0 {
-				// log.Print("La distanza minore è dal centroide #", i)
 				minDistance = euDistance
 				centroidIndex = i
 			}
@@ -44,18 +41,14 @@ func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 		minDistance = 0
 	}
 	utils.ViewClusters(clusters, len(input.Centroids), false)
-	//TODO saveClusters()
 
 	clustersPointer = &clusters
 	*reply = os.Getenv("HOSTNAME")
 	return nil
 }
 
-// TODO forse conviene salvare i cluster calcolati nella map in locale nel mapper
 func (w *Mapper) GetClusters(input int, reply *utils.MapperResponse) error {
 	log.Print("Request recieved from reducer with clusterKey: ", input)
-
-	// log.Print((*clustersPointer)[input])
 	*reply = utils.MapperResponse{Cluster: (*clustersPointer)[input], IP: os.Getenv("HOSTNAME")}
 	return nil
 }

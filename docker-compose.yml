@@ -10,7 +10,7 @@ services:
       - '9001'
     ports:
       - '9001:9001'
-    # command: sh src/kmeans-MR/init.sh master
+    command: sh src/kmeans-MR/init.sh master
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
@@ -24,7 +24,7 @@ services:
       - '9999'
     depends_on:
       - kmeans-master
-    # command: sh src/kmeans-MR/init.sh mapper
+    command: sh src/kmeans-MR/init.sh mapper
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
@@ -37,7 +37,7 @@ services:
       - kmeans-master
     expose:
       - '9999'
-    # command: sh src/kmeans-MR/init.sh reducer
+    command: sh src/kmeans-MR/init.sh reducer
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils

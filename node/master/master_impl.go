@@ -18,10 +18,9 @@ func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 
 	for i := 0; i < kValue; i++ {
 		randIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(points))))
-		log.Print("randIndex: ", randIndex)
 		centroids[i] = points[randIndex.Int64()]
 	}
-	log.Print("Starting Centroids: ", centroids)
+	log.Print("Standard Centroids Initialization: ", centroids)
 	return centroids
 }
 
@@ -58,7 +57,6 @@ func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 	// Iterate untile k centroids has been selected
 	var iteration int = 0
 	for {
-		log.Print(iteration)
 		iteration++
 		var distances = make([]utils.Triple, len(points))
 		maxDist = 0
@@ -95,7 +93,7 @@ func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 			break
 		}
 	}
-	log.Print(centroids)
+	log.Print("KMeans++ Centroids Initialization: ", centroids)
 	return centroids
 }
 
@@ -112,7 +110,6 @@ func euclideanDistance(point, centroid utils.Point, d int) float64 {
 
 func remove(slice []utils.Point, position int) []utils.Point {
 	return append(slice[:position], slice[position+1:]...)
-
 }
 
 func formalize(replies []utils.ReducerResponse) []utils.Point {
@@ -131,20 +128,17 @@ func convergence(actual, prev []utils.Point) bool {
 	for i, point := range actual {
 		for j := 0; j < dimension; j++ {
 			ratio = point.Values[j] - prev[i].Values[j]
-			log.Print("CONVERGENCE: ", ratio)
-			if ratio > 0.001 { //TODO define configurable threshold
+			if ratio > utils.CONG_THRESH {
 				return false
 			}
 		}
 	}
-
 	return true
-
 }
 
 func splitChunks(points []utils.Point, numberChunks int) [][]utils.Point {
 	x := int(float64(len(points)) / float64(numberChunks))
-	log.Printf("[%d Points]\t[%d Mappers]\t%d points for mapper", len(points), numberChunks, x)
+	log.Printf("Splitting {%d} points into {%d} chunks...", len(points), numberChunks)
 
 	var offset, endOffset int
 	splittedChunks := make([][]utils.Point, numberChunks)
@@ -155,7 +149,6 @@ func splitChunks(points []utils.Point, numberChunks int) [][]utils.Point {
 		} else {
 			endOffset = offset + x
 		}
-		// log.Printf("Mapper [%d]\tfrom: %d \tto: %d\n", i, offset, endOffset)
 		for j := offset; j < endOffset; j++ {
 			splittedChunks[i] = append(splittedChunks[i], points[j])
 		}
@@ -193,9 +186,7 @@ func waitMappersResponse(channels map[int]chan string) bool {
 	for i := 0; i < len(channels); i++ {
 		replies = append(replies, <-channels[i])
 	}
-
-	log.Print("All the mappers responded")
-
+	log.Print("All mappers responded\n\n")
 	return true
 }
 
@@ -206,9 +197,6 @@ func waitReducersResponse(channels map[int]chan utils.ReducerResponse, dutyReduc
 	for i := 0; i < dutyReducers; i++ {
 		replies = append(replies, <-channels[i])
 	}
-
-	log.Print("All the reducers responded")
-
 	return replies
 }
 

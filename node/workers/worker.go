@@ -63,13 +63,13 @@ func main() {
 		os.Exit(1)
 	}()
 
-	reply := askForJoin(addr, client, workerType)
-
-	if reply != 0 {
-		log.Printf("Request declined from Master %s", addr)
-		os.Exit(-1)
-	} else {
-		log.Printf("Request accepted from Master %s", addr)
+	for {
+		log.Print("Connecting to master server...")
+		reply := askForJoin(addr, client, workerType)
+		if reply == 0 {
+			log.Printf("Request accepted from Master %s", addr)
+			break
+		}
 	}
 
 	server := rpc.NewServer()

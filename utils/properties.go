@@ -11,6 +11,7 @@ const WORKER_PORT int = 9999
 const MASTER_PORT int = 9001
 const WORKER_IP string = "localhost"
 const DATASET_DIR string = "/go/src/kmeans-MR/datasets/"
+const CONG_THRESH float64 = 0.001
 
 type WorkerType int
 
@@ -36,7 +37,6 @@ func DetectTaskType(workerType string) WorkerType {
 }
 
 func Wait() {
-
 	log.Println("Press Enter...")
 	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
