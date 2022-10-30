@@ -8,7 +8,7 @@ from pandas import DataFrame
 import argparse
 import warnings
 
-# inserire riferimento a documentazione make_blobs sulla documentazione
+# TODO inserire riferimento a documentazione make_blobs sulla documentazione
 
 argsParser = argparse.ArgumentParser(
     description='d-Dimensional Dataset Generator formed by K cluster.')
@@ -19,18 +19,24 @@ argsParser.add_argument('instances', metavar='N', type=int, nargs=1,
                         help='Number of instances')
 argsParser.add_argument('centers', metavar='K', type=int, nargs=1,
                         help='Number of clusters')
+argsParser.add_argument('std', metavar='std', type=float, nargs=1,
+                        help='Standard deviation of the clusters')
 
 args = argsParser.parse_args()
 dimension = args.dimension[0]
 instances = args.instances[0]
 centers = args.centers[0]
+std = args.std[0]
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+center_box = (-20.0, 20.0)
 
 points, y = make_blobs(
-    n_samples=instances, centers=centers, n_features=dimension, shuffle=True)
+    n_samples=instances, centers=centers, n_features=dimension, shuffle=True, center_box=center_box, cluster_std=std)
 
 filename = f"dataset_{dimension}d_{centers}cluster_{instances}samples"
-output_file = Path(f"datasets/{filename}/{filename}.csv")
-output_fig = Path(f"datasets/{filename}/{filename}.png")
+output_file = Path(f"{dir_path}/{filename}/{filename}.csv")
+output_fig = Path(f"{dir_path}/{filename}/{filename}.png")
 output_file.parent.mkdir(exist_ok=True, parents=True)
 
 with open(output_file, "w") as file:
