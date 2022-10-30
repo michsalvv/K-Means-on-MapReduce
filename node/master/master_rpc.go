@@ -130,9 +130,6 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		for index := 0; index < in.Clusters; index++ {
 			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducers[index], rChannels[index])
 		}
-		// for index, reducer := range reducers {
-		// 	go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducer, rChannels[index]) // all'i-esimo reducer verranno inviati i punti assegnati all'i-esimo cluster
-		// }
 		reducersReplies = formalize(waitReducersResponse(rChannels, in.Clusters)) //trova nome migliore di formalize
 
 		// logging of centroid calculated at i-iteration
@@ -141,7 +138,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		}
 		// At the beginning prevCentroids = nil
 		if len(prevCentroids) != 0 {
-			if convergence(reducersReplies, prevCentroids) { //TODO cercare una migliore convergenza
+			if convergence(reducersReplies, prevCentroids) {
 				break
 			}
 		}

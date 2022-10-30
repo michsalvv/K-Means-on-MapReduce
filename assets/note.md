@@ -78,3 +78,8 @@ Secondo me funziona poco bene sui dataset piccoli perchè se la selezione random
 Kmeans ++ non funziona troppo bene, prova con 4d cluster grosso
 
 Per giustificare il fatto che di solito scoppia con kmeans standrd, scoppia quando i centroidi iniziali vengono scelti troppo vicini tra loro. 
+
+## kmenas ++
+The effect is an attempt to push the centroids as far from one another as possible, covering as much of the occupied data space as they can from initialization
+
+3. Select the next centroid from the data points such that the probability of choosing a point as centroid is directly proportional to its distance from the nearest, previously chosen centroid. (i.e. the point having maximum distance from the nearest centroid is most likely to be selected next as a centroid)

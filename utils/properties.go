@@ -91,3 +91,9 @@ type Result struct {
 	Iterations int
 	Error      int
 }
+
+type Triple struct {
+	P        Point
+	Distance float64
+	Centroid Point
+}

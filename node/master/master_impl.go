@@ -25,7 +25,6 @@ func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	return centroids
 }
 
-// TODO rimuovere il centroide dall'insieme dei punti una volta scelto, perchè se viene scelto lo stesso centroide due volte, ad un reducer non verrà inviato nulla
 func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 	dimension := len(points[0].Values)
 	centroids := make([]utils.Point, kValue)
@@ -34,55 +33,62 @@ func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 
 	// The first centroid is selected randomly
 	var foundedCentroid int = 0
-	centroids[foundedCentroid] = points[randIndex.Int64()]
+	var index int = int(randIndex.Int64())
+	centroids[foundedCentroid] = points[index]
 	foundedCentroid++
+	points = remove(points, int(index))
 
 	var maxDist float64
 	var farthestPoint utils.Point
 
 	// 2nd step: the point farthest away will become next centroid
-	for _, point := range points {
+	for i, point := range points {
 		dist := euclideanDistance(point, centroids[0], dimension)
 		if dist >= maxDist {
 			maxDist = dist
 			farthestPoint = point
+			index = i
 		}
 	}
-	log.Print("dist: ", maxDist)
-	log.Print("farthestPoint: ", farthestPoint)
 
 	centroids[foundedCentroid] = farthestPoint
 	foundedCentroid++
+	points = remove(points, index)
 
 	// Iterate untile k centroids has been selected
 	var iteration int = 0
 	for {
 		log.Print(iteration)
 		iteration++
-		var clusters = make([][]utils.Point, kValue)
+		var distances = make([]utils.Triple, len(points))
 		maxDist = 0
-		for _, point := range points {
+
+		// Associate every point the distance from his nearest centroid
+		for j, point := range points {
 			var minDistance float64 = 0
 			var centroidIndex int = 0
-
 			for i := 0; i < foundedCentroid; i++ {
 				euDistance := euclideanDistance(point, centroids[i], dimension)
-
 				if euDistance <= minDistance || i == 0 {
 					minDistance = euDistance
 					centroidIndex = i
 				}
-				if euDistance >= maxDist {
-					maxDist = euDistance
-					farthestPoint = point
-				}
 			}
-
-			clusters[centroidIndex] = append(clusters[centroidIndex], point)
+			distances[j] = utils.Triple{P: point, Distance: minDistance, Centroid: centroids[centroidIndex]}
 			centroidIndex = 0
 			minDistance = 0
 		}
 
+		/*
+		 * Select the next centroid from the data points such that the probability of choosing a point as centroid is directly
+		 * proportional to its distance from the nearest, previously chosen centroid.
+		 */
+		for _, info := range distances {
+			if info.Distance > maxDist {
+				maxDist = info.Distance
+				farthestPoint = info.P
+			}
+		}
 		centroids[foundedCentroid] = farthestPoint
 		foundedCentroid++ // must be updated before check beacuse it's start from 0
 		if foundedCentroid == kValue {
@@ -102,6 +108,11 @@ func euclideanDistance(point, centroid utils.Point, d int) float64 {
 		distance += math.Pow(pointVals[i]-centroidVals[i], 2)
 	}
 	return math.Sqrt(distance)
+}
+
+func remove(slice []utils.Point, position int) []utils.Point {
+	return append(slice[:position], slice[position+1:]...)
+
 }
 
 func formalize(replies []utils.ReducerResponse) []utils.Point {
