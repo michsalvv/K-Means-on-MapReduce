@@ -11,7 +11,8 @@ const WORKER_PORT int = 9999
 const MASTER_PORT int = 9001
 const WORKER_IP string = "localhost"
 const DATASET_DIR string = "/go/src/kmeans-MR/datasets/"
-const CONG_THRESH float64 = 0.001
+const TEST_FILE = "results.csv"
+const CONV_THRESH float64 = 0.001
 
 type WorkerType int
 

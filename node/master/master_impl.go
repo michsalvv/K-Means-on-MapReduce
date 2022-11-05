@@ -57,6 +57,9 @@ func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 	// Iterate untile k centroids has been selected
 	var iteration int = 0
 	for {
+		if foundedCentroid == kValue {
+			break
+		}
 		iteration++
 		var distances = make([]utils.Triple, len(points))
 		maxDist = 0
@@ -88,10 +91,7 @@ func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 			}
 		}
 		centroids[foundedCentroid] = farthestPoint
-		foundedCentroid++ // must be updated before check beacuse it's start from 0
-		if foundedCentroid == kValue {
-			break
-		}
+		foundedCentroid++
 	}
 	log.Print("KMeans++ Centroids Initialization: ", centroids)
 	return centroids
@@ -128,7 +128,7 @@ func convergence(actual, prev []utils.Point) bool {
 	for i, point := range actual {
 		for j := 0; j < dimension; j++ {
 			ratio = point.Values[j] - prev[i].Values[j]
-			if ratio > utils.CONG_THRESH {
+			if ratio > utils.CONV_THRESH {
 				return false
 			}
 		}

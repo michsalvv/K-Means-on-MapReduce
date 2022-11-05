@@ -83,7 +83,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	log.Printf("Dataset: {%s}", in.Dataset)
 
 	datasetPath := utils.DATASET_DIR + strings.Replace(in.Dataset, ".csv", "/", 1) + in.Dataset
-
+	log.Print("opening: ", datasetPath)
 	file, err := os.Open(datasetPath)
 	if err != nil {
 		log.Print(err.Error())
@@ -131,7 +131,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducers[index], rChannels[index])
 		}
 		log.Printf("Waiting for replies from reducers\n\n")
-		reducersReplies = formalize(waitReducersResponse(rChannels, in.Clusters)) //trova nome migliore di formalize
+		reducersReplies = formalize(waitReducersResponse(rChannels, in.Clusters))
 
 		// logging of centroid calculated at i-iteration
 		for i, rep := range reducersReplies {
