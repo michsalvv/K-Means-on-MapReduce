@@ -44,26 +44,22 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 
 # TODO
 - Quando crasha il master comunicarlo ai worker collegati (non è richiesto)
-- go env -w GO111MODULE=off
+
 - Nella relazione scrivere che è disponibile il log sul master
 - Mettere anche screen dell'esecuzione nella relazione
-- Nelle slide quando spieghi una funzione metti il diagramma di flusso in cui viene usata
+- Nelle slide quando spieghi una funzione metti il diagramma di flusso (map reduce) in cui viene usata
 - fare versione migliorata con combiner
-- nelle slide mettere anche una prova che con solo 2 iterazioni non funziona
-- Troppo poca randomica la selezione dei centroidi iniziali, vedi traccia ci sta qualche info utile
-- Mettere tutto più generale, provare con k>3
-- Migliorare stampe nei nodi
-- Deployare su AWS 
-  - Forse su AWS ogni eseguibile deve essere un servizio
+
 - Nella relazione scrivere come il client comunica il path del dataset al master e come il master lo cerca nella directory
   - scrivere anche che comunque è un aspetto secondario poichè il servizio è offerto in modo distribuito solamente in locale
 
-- usare sklearn per trovare i veri cluster per confrontare risultati
-- nei risultati escludere gli outlier
-  - salvare i risultati in csv [tempo esecuzione; numero iterazioni]
-
-MIGLIORARE CONVERGENZA
-
+- nei risultati analizzare outlier e deviazione standard dei cloud
+- fare script per scalare i mapper/reducer su aws
+- fare script per stoppare servizio
+- mettere docker-compose up come servizio
+- script che controlla se ec2 è on e l'avvia nel caso e collega elastic ip
+- fai script che valida tutto
+- aggiure test su singolo dataset
 
 ## Discussione su random initiliazionation
 When initializing the centroids, it is important that the initially selected points are fairly apart. If the points are too close together, there is a good chance the points will find a cluster in their local region and the actual cluster will be blended with another cluster.

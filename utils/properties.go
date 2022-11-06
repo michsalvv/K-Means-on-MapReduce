@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 const WORKER_PORT int = 9999
@@ -88,9 +89,10 @@ type ReducerResponse struct {
 }
 
 type Result struct {
-	Centroids  []Point
-	Iterations int
-	Error      int
+	Centroids     []Point
+	Iterations    int
+	Error         int
+	ExecutionTime time.Duration
 }
 
 type Triple struct {

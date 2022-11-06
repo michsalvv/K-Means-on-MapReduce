@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // const masterPath string = "server/master/"
@@ -82,8 +83,9 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	log.Printf("Starting K-Means Clustering")
 	log.Printf("Dataset: {%s}", in.Dataset)
 
+	start := time.Now()
 	datasetPath := utils.DATASET_DIR + strings.Replace(in.Dataset, ".csv", "/", 1) + in.Dataset
-	log.Print("opening: ", datasetPath)
+
 	file, err := os.Open(datasetPath)
 	if err != nil {
 		log.Print(err.Error())
@@ -102,6 +104,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	}
 
 	log.Printf("Dataset Instances: {%d}", len(points))
+	log.Print("Timer set")
 
 	chunks := splitChunks(points, len(mappers))
 
@@ -147,6 +150,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 
 	reply.Iterations = iteration
 	reply.Centroids = centroids
+	reply.ExecutionTime = time.Since(start)
 	log.Print("--------------------------------------------------------")
 	log.Print("Convergence achieved, the results were sent to the customer")
 	log.Print("--------------------------------------------------------\n")
