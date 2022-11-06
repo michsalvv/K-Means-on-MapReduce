@@ -2,23 +2,31 @@
 ---
 - hosts: all
   vars:
-    local_app_dir: "../"
+    local_app_dir: "../../KMeans-MR"
     remote_home: "/home/ec2-user"
-    remote_app_dir: "{{ remote_home}}/KMeansMR"  
+    remote_app_dir: "{{ remote_home}}"  
   become: true
 
   tasks:
-    #TODO to slow, implement via git
-    # - name: copy application directory
-    #   become: false
-    #   copy:
-    #     src: "{{ item }}"
-    #     dest: "{{ remote_app_dir }}"
-    #   with_items:
-    #     - ../node
-    #     - ../datasets
-    #     - ../utils
-    #     - ../docker-compose.yml
+    - name: Upload KMeans Lib
+      ansible.builtin.synchronize:
+        src: "{{ local_app_dir }}"
+        dest: "{{ remote_app_dir }}"
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.gitignore"
+      tags:
+       - upload
+
+    - name: Upload KMeans Lib
+      ansible.builtin.synchronize:
+        src: "{{ local_app_dir }}/datasets"
+        dest: "{{ remote_app_dir }}/KMeans-MR"
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=.gitignore"
+      tags:
+       - dataset
 
     - name: Upgrade all packages
       yum: name=* state=latest
