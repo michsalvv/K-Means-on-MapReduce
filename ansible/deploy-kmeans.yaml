@@ -26,7 +26,7 @@
           - "--exclude=.git"
           - "--exclude=.gitignore"
       tags:
-       - dataset
+       - datasets
 
     - name: Upgrade all packages
       yum: name=* state=latest
