@@ -128,7 +128,7 @@ func convergence(actual, prev []utils.Point) bool {
 	for i, point := range actual {
 		for j := 0; j < dimension; j++ {
 			ratio = point.Values[j] - prev[i].Values[j]
-			if ratio > utils.CONV_THRESH {
+			if ratio > cfg.Parameters.CONV_THRESH {
 				return false
 			}
 		}

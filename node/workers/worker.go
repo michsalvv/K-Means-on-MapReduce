@@ -8,9 +8,10 @@ import (
 	"net/rpc"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 )
+
+var cfg utils.Config
 
 func askForJoin(master string, client *rpc.Client, workerType utils.WorkerType) int {
 
@@ -36,7 +37,7 @@ func disconnect(master string, client *rpc.Client, workerType utils.WorkerType) 
 }
 
 func main() {
-
+	cfg = utils.GetConfiguration()
 	if len(os.Args) < 3 {
 		fmt.Println("Please specify master address and type of tasker:\n\t./worker [addr:port] [reducer/mapper]")
 		os.Exit(1)
@@ -89,14 +90,14 @@ func main() {
 		}
 	}
 
-	var address string = ":" + strconv.Itoa(utils.WORKER_PORT)
+	var address string = ":" + cfg.Server.WORKER_PORT
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		disconnect(addr, client, workerType)
 		log.Fatal("Error in listening:", err)
 		os.Exit(-1)
 	}
-	log.Printf("Worker online on port %d\n", utils.WORKER_PORT)
+	log.Printf("Worker online on port %s\n", cfg.Server.WORKER_PORT)
 	server.Accept(lis)
 
 }

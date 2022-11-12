@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/rpc"
 	"os"
-	"strconv"
 )
 
 type Reducer int
@@ -15,20 +14,18 @@ func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) er
 
 	var cluster []utils.Point
 	for _, mapper := range in.Mappers {
-		clusterPoints := request(mapper, in.ClusterKey).Cluster //TODO se Dial è bloccante e connessioni HTTP non vanno bene, pensare ad una go routine per reducer
+		clusterPoints := request(mapper, in.ClusterKey).Cluster
 		cluster = append(cluster, clusterPoints...)
 	}
 
 	log.Printf("Received [%d] points for cluster #%d  ", len(cluster), in.ClusterKey)
 
-	// var newCentroid utils.Point = recenter()
 	*reply = utils.ReducerResponse{Centroid: recenter(cluster), IP: os.Getenv("HOSTNAME")}
 	return nil
 }
 
 func request(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse {
-	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
-	//TODO Vedere se Dial va bene perchè potrebbe essere bloccante quindi un mapper potrebbe rispondere alle richieste dai vari reducer in sequenza e non contemporaneamente
+	addr := mapper.IP + ":" + cfg.Server.WORKER_PORT
 	client, err := rpc.Dial("tcp", addr)
 	log.Print("Asking data to mapper: ", addr)
 
@@ -53,7 +50,6 @@ func recenter(points []utils.Point) utils.Point {
 	for _, point := range points {
 		for i := 0; i < dimension; i++ {
 			centroidValues[i] += point.Values[i]
-			// log.Print("updated: ", centroidValues)
 		}
 	}
 	for i := 0; i < dimension; i++ {

@@ -14,12 +14,14 @@ import (
 const CLIENT_OUT_DIR string = "datasets/"
 
 func main() {
-
+	cfg := utils.GetConfiguration()
+	fmt.Printf("%+v", cfg)
 	if len(os.Args) < 3 {
 		fmt.Println("Please specify master address, dataset and number of cluster to find:\n\tgo run client.go [master] [dataset] [#clusters]")
 		os.Exit(1)
 	}
-	addr := os.Args[1]
+	// addr := os.Args[1]
+	addr := cfg.Server.HOST + ":" + cfg.Server.MASTER_PORT
 	client, err := rpc.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal("Error in dialing: ", err)

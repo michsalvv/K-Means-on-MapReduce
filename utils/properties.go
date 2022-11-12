@@ -6,14 +6,19 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/kelseyhightower/envconfig"
+	"gopkg.in/yaml.v2"
 )
 
-const WORKER_PORT int = 9999
-const MASTER_PORT int = 9001
-const WORKER_IP string = "localhost"
+// const WORKER_PORT int = 9999
+// const MASTER_PORT int = 9001
+// const WORKER_IP string = "localhost"
 const DATASET_DIR string = "/go/src/kmeans-MR/datasets/"
-const TEST_FILE = "results.csv"
-const CONV_THRESH float64 = 0.001
+
+// const TEST_FILE = "results.csv"
+// const CONV_THRESH float64 = 0.001
+// const COMBINER bool = false
 
 type WorkerType int
 
@@ -50,6 +55,41 @@ func ViewClusters(clusters [][]Point, numClusters int, printCluster bool) {
 			log.Print(clusters[i])
 		}
 	}
+}
+
+func GetConfiguration() Config {
+	f, err := os.Open("config.yml")
+	if err != nil {
+		log.Fatal("Configuration file {config.yml} not found")
+	}
+	defer f.Close()
+	var cfg Config
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(&cfg)
+	if err != nil {
+		log.Fatal("Error parsing configuration file {config.yml}")
+	}
+
+	err = envconfig.Process("", &cfg)
+	if err != nil {
+		log.Fatal("Error parsing configuration file {config.yml}")
+	}
+
+	return cfg
+}
+
+type Config struct {
+	Server struct {
+		MASTER_PORT string `yaml:"master_port", envconfig:"MASTER_PORT"`
+		WORKER_PORT string `yaml:"worker_port", envconfig:"WORKE_PORT"`
+		HOST        string `yaml:"host", envconfig:"SERVER_HOST"`
+		DATASET_DIR string `yaml:"dataset_dir", envconfig:"DATASET_DIR"`
+	} `yaml:"server"`
+	Parameters struct {
+		TEST_FILE_NAME string  `yaml:"test_file_name", envconfig:"TEST_FILE_NAME"`
+		CONV_THRESH    float64 `yaml:"conv_thresh", envconfig:"CONV_THRESH"`
+		COMBINER       bool    `yaml:"combiner", envconfig:"COMBINER"`
+	} `yaml:"parameters"`
 }
 
 type JoinRequest struct {

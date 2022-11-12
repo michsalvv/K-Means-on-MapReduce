@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/rpc"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -161,7 +160,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 // A single Mapper receive a chunk of points and list of actual centroids
 
 func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.WorkerInfo, ch chan string) {
-	addr := mapper.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
+	addr := mapper.IP + ":" + cfg.Server.WORKER_PORT
 	client, err := rpc.Dial("tcp", addr)
 	log.Print("Sending chunks to mapper: ", addr)
 
@@ -181,7 +180,7 @@ func sendToMapper(chunk []utils.Point, centroids []utils.Point, mapper utils.Wor
 // A single Reducer receive all points mapped to a single cluster
 
 func sendToReducer(input utils.ReducerInput, reducer utils.WorkerInfo, ch chan utils.ReducerResponse) {
-	addr := reducer.IP + ":" + strconv.Itoa(utils.WORKER_PORT)
+	addr := reducer.IP + ":" + cfg.Server.WORKER_PORT
 	client, err := rpc.Dial("tcp", addr)
 	log.Print("Sending centroid Key to reducer: ", addr)
 

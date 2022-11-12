@@ -1,0 +1,12 @@
+# Server configurations
+server:
+  host: "172.17.0.1"
+  master_port: 9001
+  worker_port: 9999
+  dataset_dir: "/go/src/kmeans-MR/datasets/"
+
+# Database credentials
+parameters:
+  test_file_name: "results.csv"
+  conv_thresh: 0.001
+  combiner: false

@@ -43,9 +43,21 @@ func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 	utils.ViewClusters(clusters, len(input.Centroids), false)
 
 	clustersPointer = &clusters
+
+	// TODO combiner(clusterPoints)
 	*reply = os.Getenv("HOSTNAME")
 	return nil
 }
+
+//TODO
+// combiner()
+
+//TODO
+// func (w *Mapper) GetClustersCombiner(input int, reply *utils.MapperResponse) error {
+// 	log.Print("Request recieved from reducer with clusterKey: ", input)
+// 	*reply = utils.MapperResponse{Cluster: (*clustersPointer)[input], IP: os.Getenv("HOSTNAME")}
+// 	return nil
+// }
 
 func (w *Mapper) GetClusters(input int, reply *utils.MapperResponse) error {
 	log.Print("Request recieved from reducer with clusterKey: ", input)

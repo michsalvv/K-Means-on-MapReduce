@@ -1,4 +1,7 @@
 #! /bin/bash
+go env -w GO111MODULE=off
+go get gopkg.in/yaml.v2 
+go get github.com/kelseyhightower/envconfig
 
 if [ "$1" = "master" ]; then
     go env -w GO111MODULE=off ; go build -o bin/master src/kmeans-MR/master/*.go ; ./bin/master

@@ -5,11 +5,13 @@ import (
 	"log"
 	"net"
 	"net/rpc"
-	"strconv"
 )
+
+var cfg utils.Config
 
 func main() {
 	master := new(Master)
+	cfg = utils.GetConfiguration()
 
 	server := rpc.NewServer()
 	err := server.Register(master)
@@ -17,11 +19,11 @@ func main() {
 		log.Fatal("Error on register(master): ", err)
 	}
 
-	var address string = ":" + strconv.Itoa(utils.MASTER_PORT)
+	var address string = ":" + cfg.Server.MASTER_PORT
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal("Error in listening:", err)
 	}
-	log.Printf("Master online on port [%d]\n\n", utils.MASTER_PORT)
+	log.Printf("Master online on port [%s]\n\n", cfg.Server.MASTER_PORT)
 	server.Accept(lis)
 }

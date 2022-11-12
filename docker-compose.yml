@@ -15,6 +15,9 @@ services:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
       - ./datasets:/go/src/kmeans-MR/datasets
+      - type: bind
+        source: ./config.yml
+        target: /go/config.yml
 
   mapper:
     image: docker.io/bitnami/golang:1.19
@@ -28,6 +31,9 @@ services:
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
+      - type: bind
+        source: ./config.yml
+        target: /go/config.yml
 
   reducer:
     image: docker.io/bitnami/golang:1.19
@@ -41,3 +47,6 @@ services:
     volumes:
       - ./node:/go/src/kmeans-MR
       - ./utils:/go/src/kmeans-MR/utils
+      - type: bind
+        source: ./config.yml
+        target: /go/config.yml
