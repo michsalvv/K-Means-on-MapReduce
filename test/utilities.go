@@ -40,8 +40,7 @@ func KMeans(kmeansInput utils.InputKMeans) utils.Result {
 	return finalResult
 }
 
-// dataset 3d 2cluster 1000samples format
-func fetchDatasets() ([]Dataset, string) {
+func fetchDatasets() []Dataset {
 	log.Print("Fetching Datasets ...")
 	ex, err := os.Executable()
 	if err != nil {
@@ -55,8 +54,6 @@ func fetchDatasets() ([]Dataset, string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var fileName string = os.Args[2] + "_mapper_" + utils.TEST_FILE
-	TouchFile(fileName)
 
 	var datasets []Dataset
 	for _, dir := range files {
@@ -68,11 +65,12 @@ func fetchDatasets() ([]Dataset, string) {
 			datasets = append(datasets, Dataset{Path: DATASET_DIR + dir.Name(), K: k, Instances: inst, Name: dir.Name() + ".csv"})
 		}
 	}
-
-	return datasets, fileName
+	return datasets
 }
 
-// dataset 3d 2cluster 1000samples format
+/*
+Dataset name format {dataset_dimension_clusters_instances.csv}
+*/
 func FetchSingleDataset(datasetName string) Dataset {
 	datasetName = strings.Split(datasetName, ".")[0]
 	ex, err := os.Executable()
@@ -83,7 +81,9 @@ func FetchSingleDataset(datasetName string) Dataset {
 	exPath := filepath.Dir(ex)
 	datasetPath := fmt.Sprintf("%s/%s/%s.csv", strings.Replace(exPath, "test", DATASET_DIR, 1), datasetName, datasetName)
 
-	//check if file exists and takes metadata
+	/*
+		check if file exists and takes metadata
+	*/
 	var dataset Dataset
 	re := regexp.MustCompile("[0-9]+")
 	if _, err := os.Stat(datasetPath); err == nil {
@@ -99,22 +99,24 @@ func FetchSingleDataset(datasetName string) Dataset {
 }
 
 func TouchFile(name string) os.File {
-	file, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	exists, _ := os.Stat(name)
+	file, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal("File creation error")
 	}
 	defer file.Close()
-
 	csvwriter := csv.NewWriter(file)
 
-	var header []string
-	header = append(header, "Points", "Clusters", "Iterations", "ExecutionTime")
-	csvwriter.Write(header)
-	csvwriter.Flush()
+	if exists == nil {
+		var header []string
+		header = append(header, "Dataset", "Points", "Clusters", "Iterations", "ExecutionTime[ms]", "Mappers")
+		csvwriter.Write(header)
+		csvwriter.Flush()
+	}
 	return *file
 }
 
-func SaveBenchmark(res utils.Result, dataset Dataset, fileName string) bool {
+func SaveBenchmark(res []utils.Result, dataset Dataset, fileName string) bool {
 
 	f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
@@ -124,11 +126,13 @@ func SaveBenchmark(res utils.Result, dataset Dataset, fileName string) bool {
 
 	csvwriter := csv.NewWriter(f)
 	defer csvwriter.Flush()
-
-	var line []string
-	executionTime := res.ExecutionTime.Milliseconds()
-	line = append(line, strconv.Itoa(dataset.Instances), strconv.Itoa(dataset.K), strconv.Itoa(res.Iterations), strconv.Itoa(int(executionTime)))
-	csvwriter.Write(line)
+	for _, result := range res {
+		var line []string
+		executionTime := result.ExecutionTime.Milliseconds()
+		line = append(line, dataset.Name, strconv.Itoa(dataset.Instances), strconv.Itoa(dataset.K),
+			strconv.Itoa(result.Iterations), strconv.FormatInt(executionTime, 10), MAPPER_NUMS)
+		csvwriter.Write(line)
+	}
 	return true
 }
 
@@ -153,7 +157,7 @@ func SaveResults(res utils.Result, datasetName string) bool {
 
 func PrintResults(results []utils.Result) {
 	var mean time.Duration
-	// var averageTime int64
+
 	log.Print(color.HiGreenString("Test done!"))
 
 	for i, res := range results {
@@ -165,7 +169,9 @@ func PrintResults(results []utils.Result) {
 		mean += res.ExecutionTime
 	}
 
-	//Print calculated centroids of only first run
+	/*
+		Print calculated centroids of only first run
+	*/
 	log.Print("Results:")
 	for i, point := range results[0].Centroids {
 		line := strings.Fields(strings.Trim(fmt.Sprint(point.Values), "[]"))
@@ -173,7 +179,10 @@ func PrintResults(results []utils.Result) {
 	}
 
 	if len(results) > 1 {
-		mean = mean / time.Duration(len(results)) //len(results) = test runs
+		/*
+			len(results) = test runs
+		*/
+		mean = mean / time.Duration(len(results))
 		log.Print(color.HiCyanString("AVERAGE EXECUTION TIME: [%s]", mean))
 	}
 }

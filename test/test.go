@@ -1,21 +1,14 @@
 package main
 
 import (
-	/*"encoding/csv"
 	"fmt"
 	"kmeans-MR/utils"
 	"log"
 	"net/rpc"
 	"os"
 	"strconv"
-	"strings"*/
 
-	"fmt"
-	"kmeans-MR/utils"
-	"log"
-	"net/rpc"
-	"os"
-	"strconv"
+	"github.com/fatih/color"
 )
 
 var client *rpc.Client
@@ -54,38 +47,38 @@ func main() {
 	default:
 		log.Fatal("Please select a valid test mode [MULTIPLE/ALLDATA]")
 	}
-
-	// var datasets []Dataset
-	// datasets, fileName := fetchDatasets()
-
-	// for i, dataset := range datasets {
-	// 	log.Printf("Test #%d on %s", i, dataset.Name)
-	// 	kmeansInput := utils.InputKMeans{Dataset: dataset.Name, Clusters: dataset.K}
-	// 	var finalResult utils.Result
-
-	// 	err = client.Call("Master.KMeans", kmeansInput, &finalResult)
-	// 	if err != nil {
-	// 		log.Fatal("Error in Master.KMeans: \n", err.Error())
-	// 	}
-	// 	if saveBenchmark(finalResult, dataset, fileName) {
-	// 		log.Print("Test Done ...")
-	// 		saveResults(finalResult, dataset.Name)
-	// 	}
-	// }
 }
 
 func run_test(datasetName, testingMode string, runs int) []utils.Result {
 
-	dataset := FetchSingleDataset(datasetName)
 	var results []utils.Result
 
 	switch testingMode {
 
 	case MODE_MULTIPLE:
+		dataset := FetchSingleDataset(datasetName)
+		file := TouchFile(MAPPER_NUMS + TEST_FILE_FORMAT)
 		log.Printf("Testing on %s", dataset.Name)
 		for i := 0; i < runs; i++ {
 			kmeansInput := utils.InputKMeans{Dataset: dataset.Name, Clusters: dataset.K}
 			results = append(results, KMeans(kmeansInput))
+		}
+		SaveBenchmark(results, dataset, file.Name())
+
+	case MODE_ALL_DATASET:
+		file := TouchFile("ALL_DATA_" + MAPPER_NUMS + TEST_FILE_FORMAT)
+		datasets := fetchDatasets()
+
+		for _, dataset := range datasets {
+			kmeansInput := utils.InputKMeans{Dataset: dataset.Name, Clusters: dataset.K}
+			finalResult := KMeans(kmeansInput)
+
+			results = append(results, finalResult)
+			SaveBenchmark([]utils.Result{finalResult}, dataset, file.Name())
+			log.Printf("[%s] results achieved in [%s] iterations with [%s] using [%s] mapper nodes",
+				color.HiWhiteString(dataset.Name),
+				color.YellowString(strconv.Itoa(finalResult.Iterations)),
+				color.GreenString(finalResult.ExecutionTime.String()), color.RedString(MAPPER_NUMS))
 		}
 	}
 
