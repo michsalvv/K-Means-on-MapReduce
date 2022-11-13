@@ -11,14 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// const WORKER_PORT int = 9999
-// const MASTER_PORT int = 9001
-// const WORKER_IP string = "localhost"
 const DATASET_DIR string = "/go/src/kmeans-MR/datasets/"
-
-// const TEST_FILE = "results.csv"
-// const CONV_THRESH float64 = 0.001
-// const COMBINER bool = false
 
 type WorkerType int
 
@@ -31,6 +24,12 @@ const (
 const (
 	NO_RES_ERROR      string = "not enough resources to perform the algorithm"
 	NO_REDUCERS_ERROR string = "not enough reducers available in the cluster to perform the algorithm"
+)
+
+const (
+	NO_CONVERGENCE int = -1
+	THRESHOLD_OK   int = 1
+	NO_UPDATES     int = 0
 )
 
 func DetectTaskType(workerType string) WorkerType {
@@ -115,8 +114,9 @@ type MapperInput struct {
 }
 
 type MapperResponse struct {
-	Cluster []Point
-	IP      string
+	Cluster               []Point
+	IP                    string
+	ClusterDimensionality []int //Used only for combiner optimization
 }
 
 type ReducerInput struct {
@@ -124,15 +124,17 @@ type ReducerInput struct {
 	ClusterKey int
 }
 type ReducerResponse struct {
-	Centroid Point
-	IP       string
+	Centroid         Point
+	IP               string
+	CombinedResponse []Point
 }
 
 type Result struct {
-	Centroids     []Point
-	Iterations    int
-	Error         int
-	ExecutionTime time.Duration
+	Centroids         []Point
+	Iterations        int
+	Error             int
+	ExecutionTime     time.Duration
+	StartingCentroids []Point
 }
 
 type Triple struct {

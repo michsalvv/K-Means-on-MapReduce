@@ -107,9 +107,9 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 
 	chunks := splitChunks(points, len(mappers))
 
-	// centroids := startingCentroids(points, in.Clusters)		// Standard Centroids Initialization
+	// centroids := startingCentroids(points, in.Clusters) // Standard Centroids Initialization
 	centroids := startingCentroidsPlus(points, in.Clusters) // KMeans++ Implementation
-
+	generatedCentroids := centroids
 	log.Print("--------------------------------------------------------")
 	mChannels, rChannels := initializeChannels()
 
@@ -131,25 +131,30 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		// Comunicate to reducer which cluster's key has to obtain.
 		for index := 0; index < in.Clusters; index++ {
 			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducers[index], rChannels[index])
+			if cfg.Parameters.COMBINER {
+				break //inviamo solo al primo reducer, l'unico necessario
+			}
 		}
 		log.Printf("Waiting for replies from reducers\n\n")
 		reducersReplies = formalize(waitReducersResponse(rChannels, in.Clusters))
+		iteration++
 
 		// logging of centroid calculated at i-iteration
 		for i, rep := range reducersReplies {
 			log.Printf("New Centroid #%d: %v", i, rep.Values)
 		}
-		if convergence(reducersReplies, centroids) {
+		if (checkConvergence(reducersReplies, centroids)) || iteration > 50 {
 			centroids = reducersReplies
 			break
 		}
+
 		centroids = reducersReplies
-		iteration++
 	}
 
 	reply.Iterations = iteration
 	reply.Centroids = centroids
 	reply.ExecutionTime = time.Since(start)
+	reply.StartingCentroids = generatedCentroids
 	log.Print("--------------------------------------------------------")
 	log.Print("Convergence achieved, the results were sent to the customer")
 	log.Print("--------------------------------------------------------\n")

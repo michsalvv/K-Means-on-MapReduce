@@ -9,18 +9,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 const CLIENT_OUT_DIR string = "datasets/"
 
 func main() {
 	cfg := utils.GetConfiguration()
-	fmt.Printf("%+v", cfg)
-	if len(os.Args) < 3 {
-		fmt.Println("Please specify master address, dataset and number of cluster to find:\n\tgo run client.go [master] [dataset] [#clusters]")
+	if len(os.Args) < 2 {
+		fmt.Println("Please specify datasetPath and number of cluster to find:\n\tgo run client.go [dataset] [#clusters]")
 		os.Exit(1)
 	}
-	// addr := os.Args[1]
 	addr := cfg.Server.HOST + ":" + cfg.Server.MASTER_PORT
 	client, err := rpc.Dial("tcp", addr)
 	if err != nil {
@@ -28,8 +28,8 @@ func main() {
 	}
 	defer client.Close()
 
-	clusters, _ := strconv.Atoi(os.Args[3])
-	datasetPath := strings.Split(os.Args[2], "/")
+	clusters, _ := strconv.Atoi(os.Args[2])
+	datasetPath := strings.Split(os.Args[1], "/")
 	datasetName := datasetPath[len(datasetPath)-1]
 
 	kmeansInput := utils.InputKMeans{Dataset: datasetName, Clusters: clusters}
@@ -56,16 +56,23 @@ func saveResults(res utils.Result, datasetName string) bool {
 	defer csvFile.Close()
 
 	csvwriter := csv.NewWriter(csvFile)
-	fmt.Println()
-	log.Printf("Convergence achieved in %d iterations: ", res.Iterations)
+	log.Print(color.HiWhiteString("------- Clustering via KMeans of "), color.HiGreenString("{"+datasetName+"}"), color.HiWhiteString(" -------"))
+	log.Print("\n")
+	log.Print("Starting Centroids:")
+	for _, centroid := range res.StartingCentroids {
+		line := strings.Fields(strings.Trim(fmt.Sprint(centroid), "{}"))
+		log.Printf("%s", color.HiBlueString(strings.Join(line, "; ")))
+	}
+
+	log.Printf("Convergence achieved in [%s] %s: ", color.HiGreenString(strconv.Itoa(res.Iterations)), color.HiGreenString("iterations"))
 	for i, point := range res.Centroids {
 		line := strings.Fields(strings.Trim(fmt.Sprint(point.Values), "[]"))
-		log.Printf("[#%d] ->  %s", i, strings.Join(line, "; "))
+		log.Printf("[#%s] ->  %s", color.HiYellowString(strconv.Itoa(i)), color.HiYellowString(strings.Join(line, "; ")))
 		csvwriter.Write(line)
 	}
 
 	fmt.Println()
-	log.Printf("Results are available in [%s]", filePath)
+	log.Printf("Results are available in [%s]", color.HiRedString(filePath))
 	csvwriter.Flush()
 	return true
 }

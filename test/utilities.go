@@ -164,7 +164,7 @@ func PrintResults(results []utils.Result) {
 		var executionTime string = res.ExecutionTime.String()
 		var iterations string = strconv.Itoa(res.Iterations)
 		log.Printf("[%s] results achieved in [%s] iterations with [%s] using [%s] mapper nodes",
-			color.HiWhiteString("Iteration #"+strconv.Itoa(i)),
+			color.HiWhiteString("Run #"+strconv.Itoa(i)),
 			color.YellowString(iterations), color.GreenString(executionTime), color.RedString(MAPPER_NUMS))
 		mean += res.ExecutionTime
 	}

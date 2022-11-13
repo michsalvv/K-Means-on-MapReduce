@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var cfg utils.Config
@@ -48,7 +49,7 @@ func main() {
 	if workerType == -1 {
 		log.Fatal("Please select a valid task type")
 	}
-
+	time.Sleep(3000) // wait master startup
 	client, err := rpc.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal("Error in dialing: ", err)
@@ -99,5 +100,4 @@ func main() {
 	}
 	log.Printf("Worker online on port %s\n", cfg.Server.WORKER_PORT)
 	server.Accept(lis)
-
 }

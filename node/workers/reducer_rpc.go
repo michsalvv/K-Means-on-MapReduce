@@ -9,22 +9,49 @@ import (
 
 type Reducer int
 
+var pointsOfCluster []int
+
 func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) error {
 	log.Printf("Processing Cluster #[%d] ", in.ClusterKey)
 
 	var cluster []utils.Point
-	for _, mapper := range in.Mappers {
-		clusterPoints := request(mapper, in.ClusterKey).Cluster
-		cluster = append(cluster, clusterPoints...)
+	pointsOfCluster = nil
+	for i, mapper := range in.Mappers {
+
+		if cfg.Parameters.COMBINER {
+			log.Print("Combiner")
+			combined_response := retrieveData(mapper, 0)
+
+			if i == 0 {
+				cluster = make([]utils.Point, len(combined_response.Cluster))
+				log.Print(len(combined_response.Cluster[0].Values))
+				for i := 0; i < len(combined_response.Cluster); i++ {
+					cluster[i].Values = make([]float64, len(combined_response.Cluster[0].Values))
+				}
+			}
+			aggregate(&cluster, combined_response.Cluster, combined_response.ClusterDimensionality)
+
+		} else {
+			log.Print("No Combiner")
+			clusterPoints := retrieveData(mapper, in.ClusterKey).Cluster
+			cluster = append(cluster, clusterPoints...)
+		}
 	}
 
 	log.Printf("Received [%d] points for cluster #%d  ", len(cluster), in.ClusterKey)
-
-	*reply = utils.ReducerResponse{Centroid: recenter(cluster), IP: os.Getenv("HOSTNAME")}
+	recenteredCluster := recenter(cluster)
+	if cfg.Parameters.COMBINER {
+		log.Print("Combiner")
+		log.Print("recentered: ", recenteredCluster)
+		*reply = utils.ReducerResponse{CombinedResponse: recenteredCluster, IP: os.Getenv("HOSTNAME")}
+		return nil
+	}
+	log.Print("No Combiner")
+	*reply = utils.ReducerResponse{Centroid: recenteredCluster[0], IP: os.Getenv("HOSTNAME")}
 	return nil
 }
 
-func request(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse {
+func retrieveData(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse {
 	addr := mapper.IP + ":" + cfg.Server.WORKER_PORT
 	client, err := rpc.Dial("tcp", addr)
 	log.Print("Asking data to mapper: ", addr)
@@ -42,9 +69,21 @@ func request(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse {
 	return reply
 }
 
-func recenter(points []utils.Point) utils.Point {
+func recenter(points []utils.Point) []utils.Point {
 
 	var dimension int = len(points[0].Values)
+	clusters := points
+	if cfg.Parameters.COMBINER {
+		log.Print("Combiner")
+		log.Print("clusterDimensionality: ", pointsOfCluster)
+		for k, cluster := range clusters {
+			for i := 0; i < dimension; i++ {
+				cluster.Values[i] = cluster.Values[i] / float64(pointsOfCluster[k])
+			}
+		}
+		return clusters
+	}
+	log.Print("No Combiner")
 	centroidValues := make([]float64, dimension)
 
 	for _, point := range points {
@@ -57,5 +96,24 @@ func recenter(points []utils.Point) utils.Point {
 	}
 
 	log.Print("Recentered centroid: ", centroidValues)
-	return utils.Point{Values: centroidValues}
+	result := utils.Point{Values: centroidValues}
+	return []utils.Point{result}
+}
+
+func aggregate(combined *[]utils.Point, localsum []utils.Point, clusterDimensionality []int) {
+	dim := len((*combined)[0].Values)
+
+	if pointsOfCluster == nil {
+		log.Print("nil")
+		pointsOfCluster = make([]int, len(clusterDimensionality))
+	}
+
+	log.Print(clusterDimensionality)
+	for k, cluster := range *combined {
+		for i := 0; i < dim; i++ {
+			cluster.Values[i] += localsum[k].Values[i]
+		}
+		pointsOfCluster[k] += clusterDimensionality[k]
+	}
+	log.Print("pointsOfCluster: ", pointsOfCluster)
 }

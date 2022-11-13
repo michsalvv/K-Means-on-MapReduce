@@ -11,12 +11,14 @@ type Mapper int
 
 var clustersPointer *[][]utils.Point
 var chunk *[]utils.Point
+var local_sum []utils.Point
 var dimension int
 
 func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 
 	var minDistance float64 = 0
 	var centroidIndex int
+	local_sum = nil
 
 	// Retrieving of chunk ad metadata only at first iteration
 	if input.Chunk != nil {
@@ -43,24 +45,47 @@ func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 	utils.ViewClusters(clusters, len(input.Centroids), false)
 
 	clustersPointer = &clusters
-
-	// TODO combiner(clusterPoints)
+	log.Print("No Combiner")
+	if cfg.Parameters.COMBINER {
+		log.Print("Combiner")
+		local_sum = combine(clustersPointer)
+	}
 	*reply = os.Getenv("HOSTNAME")
 	return nil
 }
 
-//TODO
-// combiner()
+/*
+*Compute for each centroid local sums of points
+* Sendo to reducer: <centroid, partial sums>
+ */
+func combine(clusters *[][]utils.Point) []utils.Point {
+	var combined_values = make([]utils.Point, len(*clusters))
 
-//TODO
-// func (w *Mapper) GetClustersCombiner(input int, reply *utils.MapperResponse) error {
-// 	log.Print("Request recieved from reducer with clusterKey: ", input)
-// 	*reply = utils.MapperResponse{Cluster: (*clustersPointer)[input], IP: os.Getenv("HOSTNAME")}
-// 	return nil
-// }
+	for j, cluster := range *clusters {
+		centroidValues := make([]float64, dimension)
+
+		for _, point := range cluster {
+			for i := 0; i < dimension; i++ {
+				centroidValues[i] += point.Values[i]
+			}
+		}
+		combined_values[j].Values = centroidValues
+	}
+	return combined_values
+}
 
 func (w *Mapper) GetClusters(input int, reply *utils.MapperResponse) error {
 	log.Print("Request recieved from reducer with clusterKey: ", input)
+
+	if cfg.Parameters.COMBINER {
+		clusterDimensionality := make([]int, len(*clustersPointer)) //len(*clusterPointer) -> k
+		for i := 0; i < len(*clustersPointer); i++ {
+			clusterDimensionality[i] = len((*clustersPointer)[i])
+		}
+		log.Print(clusterDimensionality)
+		*reply = utils.MapperResponse{IP: os.Getenv("HOSTNAME"), Cluster: local_sum, ClusterDimensionality: clusterDimensionality}
+		return nil
+	}
 	*reply = utils.MapperResponse{Cluster: (*clustersPointer)[input], IP: os.Getenv("HOSTNAME")}
 	return nil
 }

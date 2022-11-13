@@ -15,30 +15,29 @@ var client *rpc.Client
 var err error
 
 func main() {
-
-	if len(os.Args) < 3 {
-		fmt.Println("Please specify service [address:port] [MULTIPLE/ALLDATA] [numerOfMappers] optional{[datasetName], [RUNS NUMBER] to perform tests")
+	cfg := utils.GetConfiguration()
+	if len(os.Args) < 2 {
+		fmt.Println("Please specify service [MULTIPLE/ALLDATA] [numerOfMappers] optional{[datasetName], [RUNS NUMBER] to perform tests")
 		os.Exit(1)
 	}
 
 	// Connecting to service
-	addr := os.Args[1]
-	MAPPER_NUMS = os.Args[3]
+	addr := cfg.Server.HOST + ":" + cfg.Server.MASTER_PORT
+	MAPPER_NUMS = os.Args[2]
 	client, err = rpc.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal("Error in dialing: ", err)
 	}
 	defer client.Close()
-
-	switch os.Args[2] {
+	switch os.Args[1] {
 	case MODE_ALL_DATASET:
-		run_test(os.Args[4], MODE_ALL_DATASET, 1)
+		run_test(os.Args[3], MODE_ALL_DATASET, 1)
 
 	case MODE_MULTIPLE:
 		var runs int
 		if len(os.Args) > 4 {
-			if runs, _ = strconv.Atoi(os.Args[5]); runs > 0 {
-				PrintResults(run_test(os.Args[4], MODE_MULTIPLE, runs))
+			if runs, _ = strconv.Atoi(os.Args[4]); runs > 0 {
+				PrintResults(run_test(os.Args[3], MODE_MULTIPLE, runs))
 			}
 			break
 		}

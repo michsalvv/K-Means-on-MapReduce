@@ -113,6 +113,10 @@ func remove(slice []utils.Point, position int) []utils.Point {
 }
 
 func formalize(replies []utils.ReducerResponse) []utils.Point {
+
+	if cfg.Parameters.COMBINER {
+		return replies[0].CombinedResponse
+	}
 	var ret []utils.Point
 	for _, rep := range replies {
 		ret = append(ret, rep.Centroid)
@@ -121,14 +125,14 @@ func formalize(replies []utils.ReducerResponse) []utils.Point {
 	return ret
 }
 
-func convergence(actual, prev []utils.Point) bool {
-	var ratio float64
+func checkConvergence(actual, prev []utils.Point) bool {
+	var diff float64
 	var dimension int = len(actual[0].Values)
-
 	for i, point := range actual {
 		for j := 0; j < dimension; j++ {
-			ratio = point.Values[j] - prev[i].Values[j]
-			if ratio > cfg.Parameters.CONV_THRESH {
+			diff = point.Values[j] - prev[i].Values[j]
+			if diff > cfg.Parameters.CONV_THRESH {
+				log.Print(diff)
 				return false
 			}
 		}
@@ -196,6 +200,9 @@ func waitReducersResponse(channels map[int]chan utils.ReducerResponse, dutyReduc
 	// Waiting for reducers replies
 	for i := 0; i < dutyReducers; i++ {
 		replies = append(replies, <-channels[i])
+		if cfg.Parameters.COMBINER {
+			break // we had to wait for only one reducer
+		}
 	}
 	return replies
 }
@@ -233,7 +240,7 @@ func checkAvailability(inputData utils.InputKMeans, mappers, reducers []utils.Wo
 		return errors.New(utils.NO_RES_ERROR)
 	}
 
-	if len(reducers) < inputData.Clusters {
+	if (len(reducers) < inputData.Clusters) && !cfg.Parameters.COMBINER {
 		log.Print(utils.NO_REDUCERS_ERROR)
 		return errors.New(utils.NO_REDUCERS_ERROR)
 	}

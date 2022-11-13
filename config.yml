@@ -8,5 +8,5 @@ server:
 # Database credentials
 parameters:
   test_file_name: "results.csv"
-  conv_thresh: 0.001
+  conv_thresh: 0.002
   combiner: false
