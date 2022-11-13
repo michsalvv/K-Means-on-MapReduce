@@ -42,6 +42,7 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - spawnare 1 o più worker aggiuntivi che resteranno in idle. Nel caso in cui un mappere non finisce il job entro un tot, viene considerato failed e il master assegnerà il suo chunk ad un nuovo worker. Nel frattempo avvierà una procedura di ping per vedere se il mapper crashato è tornato online. Nel caso lo utilizzerà come worker idle. 
 
 
+
 # TODO
 - Quando crasha il master comunicarlo ai worker collegati (non è richiesto)
 
@@ -49,7 +50,7 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - Mettere anche screen dell'esecuzione nella relazione
 - Nelle slide quando spieghi una funzione metti il diagramma di flusso (map reduce) in cui viene usata
 - fare versione migliorata con combiner
-
+- Nella relazione scrivere che il servizio usa tutti i mapper a disposizione
 - Nella relazione scrivere come il client comunica il path del dataset al master e come il master lo cerca nella directory
   - scrivere anche che comunque è un aspetto secondario poichè il servizio è offerto in modo distribuito solamente in locale
 
@@ -58,8 +59,7 @@ https://yunuskilicdev.medium.com/distributed-mapreduce-algorithm-and-its-go-impl
 - fare script per stoppare servizio
 - mettere docker-compose up come servizio
 - script che controlla se ec2 è on e l'avvia nel caso e collega elastic ip
-- fai script che valida tutto
-- aggiure test su singolo dataset
+- script per cambiare configurazione combiner si/no
 
 ## Discussione su random initiliazionation
 When initializing the centroids, it is important that the initially selected points are fairly apart. If the points are too close together, there is a good chance the points will find a cluster in their local region and the actual cluster will be blended with another cluster.
