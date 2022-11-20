@@ -44,6 +44,6 @@ plt.ylabel("y")
 plt.legend()
 
 output_fig_path = resultsPath.replace(
-    "centroids", "kmeans_reuslts").replace(".csv", ".png")
+    "centroids", "kmeans_results").replace(".csv", ".png")
 plt.savefig(output_fig_path)
 plt.show()
