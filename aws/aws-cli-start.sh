@@ -11,4 +11,4 @@ else
 	aws ec2 start-instances --instance-ids $INSTANCE_ID
 fi
 
-aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id ALLOCATION_ID
+#aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id ALLOCATION_ID
