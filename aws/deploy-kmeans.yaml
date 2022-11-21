@@ -1,4 +1,3 @@
-# Credits: https://lastviking.eu/install_docker_on_centos_with_ansible.html
 ---
 - hosts: all
   vars:
@@ -35,6 +34,3 @@
       shell: /ec2-user/KMeans-MR/aws/docker_install.sh
       tags:
        - docker
-
-    - name: Start kmeans service
-      shell: /ec2-user/KMeans-MR/aws/start_service.sh

@@ -236,12 +236,10 @@ func closeChannels(mChannels map[int]chan string, rChannels map[int]chan utils.R
 
 func checkAvailability(inputData utils.InputKMeans, mappers, reducers []utils.WorkerInfo) error {
 	if len(mappers) == 0 || len(reducers) == 0 {
-		log.Print(utils.NO_RES_ERROR)
 		return errors.New(utils.NO_RES_ERROR)
 	}
 
 	if (len(reducers) < inputData.Clusters) && !cfg.Parameters.COMBINER {
-		log.Print(utils.NO_REDUCERS_ERROR)
 		return errors.New(utils.NO_REDUCERS_ERROR)
 	}
 

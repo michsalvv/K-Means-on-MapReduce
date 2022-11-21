@@ -45,9 +45,7 @@ func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 	utils.ViewClusters(clusters, len(input.Centroids), false)
 
 	clustersPointer = &clusters
-	log.Print("No Combiner")
 	if cfg.Parameters.COMBINER {
-		log.Print("Combiner")
 		local_sum = combine(clustersPointer)
 	}
 	*reply = os.Getenv("HOSTNAME")
@@ -82,7 +80,6 @@ func (w *Mapper) GetClusters(input int, reply *utils.MapperResponse) error {
 		for i := 0; i < len(*clustersPointer); i++ {
 			clusterDimensionality[i] = len((*clustersPointer)[i])
 		}
-		log.Print(clusterDimensionality)
 		*reply = utils.MapperResponse{IP: os.Getenv("HOSTNAME"), Cluster: local_sum, ClusterDimensionality: clusterDimensionality}
 		return nil
 	}

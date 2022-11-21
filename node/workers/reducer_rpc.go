@@ -19,12 +19,10 @@ func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) er
 	for i, mapper := range in.Mappers {
 
 		if cfg.Parameters.COMBINER {
-			log.Print("Combiner")
 			combined_response := retrieveData(mapper, 0)
 
 			if i == 0 {
 				cluster = make([]utils.Point, len(combined_response.Cluster))
-				log.Print(len(combined_response.Cluster[0].Values))
 				for i := 0; i < len(combined_response.Cluster); i++ {
 					cluster[i].Values = make([]float64, len(combined_response.Cluster[0].Values))
 				}
@@ -32,7 +30,6 @@ func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) er
 			aggregate(&cluster, combined_response.Cluster, combined_response.ClusterDimensionality)
 
 		} else {
-			log.Print("No Combiner")
 			clusterPoints := retrieveData(mapper, in.ClusterKey).Cluster
 			cluster = append(cluster, clusterPoints...)
 		}
@@ -41,12 +38,9 @@ func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) er
 	log.Printf("Received [%d] points for cluster #%d  ", len(cluster), in.ClusterKey)
 	recenteredCluster := recenter(cluster)
 	if cfg.Parameters.COMBINER {
-		log.Print("Combiner")
-		log.Print("recentered: ", recenteredCluster)
 		*reply = utils.ReducerResponse{CombinedResponse: recenteredCluster, IP: os.Getenv("HOSTNAME")}
 		return nil
 	}
-	log.Print("No Combiner")
 	*reply = utils.ReducerResponse{Centroid: recenteredCluster[0], IP: os.Getenv("HOSTNAME")}
 	return nil
 }
@@ -74,8 +68,6 @@ func recenter(points []utils.Point) []utils.Point {
 	var dimension int = len(points[0].Values)
 	clusters := points
 	if cfg.Parameters.COMBINER {
-		log.Print("Combiner")
-		log.Print("clusterDimensionality: ", pointsOfCluster)
 		for k, cluster := range clusters {
 			for i := 0; i < dimension; i++ {
 				cluster.Values[i] = cluster.Values[i] / float64(pointsOfCluster[k])
@@ -83,7 +75,6 @@ func recenter(points []utils.Point) []utils.Point {
 		}
 		return clusters
 	}
-	log.Print("No Combiner")
 	centroidValues := make([]float64, dimension)
 
 	for _, point := range points {
@@ -104,16 +95,13 @@ func aggregate(combined *[]utils.Point, localsum []utils.Point, clusterDimension
 	dim := len((*combined)[0].Values)
 
 	if pointsOfCluster == nil {
-		log.Print("nil")
 		pointsOfCluster = make([]int, len(clusterDimensionality))
 	}
 
-	log.Print(clusterDimensionality)
 	for k, cluster := range *combined {
 		for i := 0; i < dim; i++ {
 			cluster.Values[i] += localsum[k].Values[i]
 		}
 		pointsOfCluster[k] += clusterDimensionality[k]
 	}
-	log.Print("pointsOfCluster: ", pointsOfCluster)
 }
