@@ -1,4 +1,4 @@
-# K-Means MapReduce implementation 
+# K-Means Custering via MapReduce Implementation 
 
 <!--
 ## How Run
