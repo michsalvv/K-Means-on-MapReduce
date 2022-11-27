@@ -5,7 +5,7 @@ server:
   worker_port: 9999
   dataset_dir: "/go/src/kmeans-MR/datasets/"
 
-# Database credentials
+# Algorithm parameters
 parameters:
   test_file_name: "results.csv"
   conv_thresh: 0.002
