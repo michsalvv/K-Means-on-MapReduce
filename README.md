@@ -9,7 +9,7 @@ Realizzazione di un servizio distribuito che implementa l'algoritmo di *clusteri
 L'algoritmo è stato implementato utilizzando una delle euristiche più note e più semplici, quella di *Lloyd*, che trova in modo iterativo il centroide di ciascun cluster in cui è partizionato l'insieme di punti e quindi riassegna i punti ai cluster in base al centroide più vicino. 
 In questa repository è inoltre possibile consultare:
 * Report in formato `.pdf`: link
-* Analisi delle performance: link
+* Analisi delle performance: [exectime.xls](https://github.com/michsalvv/K-Means-on-MapReduce/blob/master/results)
 
 ## Deployment
 Il deployment del servizio è stato effettuato utilizzando i servizi web *Amazon Web Services (AWS)*. In particolare è stata utilizzata un'istanza del servizio *EC2* sulla quale viene eseguito un cluster di Docker Container composto da $M$ nodi *Mapper*, $N$ nodi *Reducer* ed un singolo nodo *Master* che gestirà l'intera esecuzione dell'algoritmo. 
@@ -33,7 +33,7 @@ ansible-playbook -i host.ini deploy-kmeans.yaml --tags "dataset"
 
 Terminato il deployment bisognerà istanziare il cluster di Docker Container all'interno dell'istanza EC2:
 ```bash
-ssh -i $aws_private_key.pem ec2-user@$EC2_IP
+ssh -i ${aws_private_key.pem} ec2-user@$EC2_IP
 cd /home/ec2-user/KMeans-MR
 docker-compose up --scale mapper=$MAPPER_NUM --scale reducer=$REDUCER_NUM
 ```
@@ -117,5 +117,3 @@ cd test
 # è possibile testare l'esecuzione dell'algoritmo su ogni dataset presente nella directory `datasets/`
 ./test ALLDATA [numerOfMappers] [RUNS]
 ```
-
-![](docs/testexecution.png)
