@@ -8,7 +8,7 @@ Author: [Michele Salvatori](https://github.com/michsalvv)
 Realizzazione di un servizio distribuito che implementa l'algoritmo di *clusterizzazione* **Kmeans** utilizzando il paradigma di computazione **MapReduce**. 
 L'algoritmo è stato implementato utilizzando una delle euristiche più note e più semplici, quella di *Lloyd*, che trova in modo iterativo il centroide di ciascun cluster in cui è partizionato l'insieme di punti e quindi riassegna i punti ai cluster in base al centroide più vicino. 
 In questa repository è inoltre possibile consultare:
-* Report in formato `.pdf`: [report.pdf](https://github.com/michsalvv/K-Means-on-MapReduce/blob/master/docs/
+* Report in formato `.pdf`: [report.pdf](https://github.com/michsalvv/K-Means-on-MapReduce/blob/master/docs/)
 * Analisi delle performance: [exectime.xls](https://github.com/michsalvv/K-Means-on-MapReduce/blob/master/results)
 
 ## Deployment
