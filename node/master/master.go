@@ -13,6 +13,7 @@ func main() {
 	master := new(Master)
 	cfg = utils.GetConfiguration()
 
+	// Exposing RPCs
 	server := rpc.NewServer()
 	err := server.Register(master)
 	if err != nil {

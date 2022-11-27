@@ -18,6 +18,7 @@ var reducers []utils.WorkerInfo
 
 type Master int
 
+// RPC exposed to workers to register for the service
 func (m *Master) JoinMR(req utils.JoinRequest, reply *int) error {
 
 	log.Printf("Request received from [%s] type [%d]", req.IP, req.Type)
@@ -33,6 +34,7 @@ func (m *Master) JoinMR(req utils.JoinRequest, reply *int) error {
 	return nil
 }
 
+// add Mapper/Worker Information to Mapper/Reducer list
 func addWorker(req utils.JoinRequest, workersList []utils.WorkerInfo) (int, []utils.WorkerInfo) {
 	for _, x := range workersList {
 		if x.IP == req.IP {
@@ -45,6 +47,7 @@ func addWorker(req utils.JoinRequest, workersList []utils.WorkerInfo) (int, []ut
 	return 0, workersList
 }
 
+// remove add Mapper/Worker Information
 func removeWorker(req utils.JoinRequest, workersList []utils.WorkerInfo) (int, []utils.WorkerInfo) {
 	var toRemove int
 	for index, x := range workersList {
@@ -70,6 +73,7 @@ func (m *Master) ExitMR(req utils.JoinRequest, reply *int) error {
 	return nil
 }
 
+// RPC exposed to user client for start kmeans Algorithm
 func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 
 	clusterError := checkAvailability(in, mappers, reducers)
@@ -105,6 +109,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 	log.Printf("Dataset Instances: {%d}", len(points))
 	log.Print("Timer set")
 
+	// Splitting Dataset
 	chunks := splitChunks(points, len(mappers))
 
 	// centroids := startingCentroids(points, in.Clusters) // Standard Centroids Initialization
@@ -122,6 +127,7 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		fmt.Print("\n")
 		log.Printf("---- Iteration [%d] ----", iteration)
 
+		// Sending Chunk to Mapper
 		for index, mapper := range mappers {
 			go sendToMapper(chunks[index], centroids, mapper, mChannels[index])
 		}
@@ -132,7 +138,8 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		for index := 0; index < in.Clusters; index++ {
 			go sendToReducer(utils.ReducerInput{Mappers: mappers, ClusterKey: index}, reducers[index], rChannels[index])
 			if cfg.Parameters.COMBINER {
-				break //inviamo solo al primo reducer, l'unico necessario
+				// We'll send only to first online reducer if Combiner is ON
+				break
 			}
 		}
 		log.Printf("Waiting for replies from reducers\n\n")
@@ -143,6 +150,8 @@ func (m *Master) KMeans(in utils.InputKMeans, reply *utils.Result) error {
 		for i, rep := range reducersReplies {
 			log.Printf("New Centroid #%d: %v", i, rep.Values)
 		}
+
+		//Checking convergence of Algorithm
 		if (checkConvergence(reducersReplies, centroids)) || iteration > 50 {
 			centroids = reducersReplies
 			break

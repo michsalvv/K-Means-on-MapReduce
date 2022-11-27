@@ -14,6 +14,7 @@ var chunk *[]utils.Point
 var local_sum []utils.Point
 var dimension int
 
+// RPC exposed to perform the Map Task
 func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 
 	var minDistance float64 = 0
@@ -53,8 +54,9 @@ func (w *Mapper) Map(input utils.MapperInput, reply *string) error {
 }
 
 /*
-*Compute for each centroid local sums of points
+* Compute for each centroid local sums of points
 * Sendo to reducer: <centroid, partial sums>
+* Used only if Combiner=ON
  */
 func combine(clusters *[][]utils.Point) []utils.Point {
 	var combined_values = make([]utils.Point, len(*clusters))
@@ -72,6 +74,7 @@ func combine(clusters *[][]utils.Point) []utils.Point {
 	return combined_values
 }
 
+// RPC exposed to Reducers to retrieve data
 func (w *Mapper) GetClusters(input int, reply *utils.MapperResponse) error {
 	log.Print("Request recieved from reducer with clusterKey: ", input)
 

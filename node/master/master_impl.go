@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// Implementation of Standard Kmean procedure for pick K random starting centroids
 func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	centroids := make([]utils.Point, kValue)
 
@@ -24,6 +25,7 @@ func startingCentroids(points []utils.Point, kValue int) []utils.Point {
 	return centroids
 }
 
+// Implementation of Kmean++ procedure for pick K starting centroids
 func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 	dimension := len(points[0].Values)
 	centroids := make([]utils.Point, kValue)
@@ -97,6 +99,7 @@ func startingCentroidsPlus(points []utils.Point, kValue int) []utils.Point {
 	return centroids
 }
 
+// Auxiliary Function to compute the Euclidean Distance
 func euclideanDistance(point, centroid utils.Point, d int) float64 {
 	var distance float64
 	pointVals := point.Values
@@ -108,10 +111,12 @@ func euclideanDistance(point, centroid utils.Point, d int) float64 {
 	return math.Sqrt(distance)
 }
 
+// Auxiliary Function
 func remove(slice []utils.Point, position int) []utils.Point {
 	return append(slice[:position], slice[position+1:]...)
 }
 
+// Auxiliary Function
 func formalize(replies []utils.ReducerResponse) []utils.Point {
 
 	if cfg.Parameters.COMBINER {
@@ -125,6 +130,9 @@ func formalize(replies []utils.ReducerResponse) []utils.Point {
 	return ret
 }
 
+/* Auxiliary Function to check the convergence of the algorithm by evaluating the differences between the actual coordinates
+*  of each centroid from the previous ones
+ */
 func checkConvergence(actual, prev []utils.Point) bool {
 	var diff float64
 	var dimension int = len(actual[0].Values)
@@ -140,6 +148,7 @@ func checkConvergence(actual, prev []utils.Point) bool {
 	return true
 }
 
+// Auxiliary Function to split the dataset into chunks of points
 func splitChunks(points []utils.Point, numberChunks int) [][]utils.Point {
 	x := int(float64(len(points)) / float64(numberChunks))
 	log.Printf("Splitting {%d} points into {%d} chunks...", len(points), numberChunks)
@@ -182,7 +191,7 @@ func readPoint(r *bufio.Reader) (utils.Point, error) {
 	return utils.Point{Values: values}, err
 }
 
-// Barriera di sincronizzazione
+// Syncronization Barrier
 func waitMappersResponse(channels map[int]chan string) bool {
 	var replies []string
 
@@ -234,6 +243,7 @@ func closeChannels(mChannels map[int]chan string, rChannels map[int]chan utils.R
 	}
 }
 
+// Auxiliary function to check the availability of EC2 cluster resources
 func checkAvailability(inputData utils.InputKMeans, mappers, reducers []utils.WorkerInfo) error {
 	if len(mappers) == 0 || len(reducers) == 0 {
 		return errors.New(utils.NO_RES_ERROR)

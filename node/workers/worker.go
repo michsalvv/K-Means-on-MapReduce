@@ -14,6 +14,7 @@ import (
 
 var cfg utils.Config
 
+// This function will call JoinMR Master's RPC to ask for join the cluster
 func askForJoin(master string, client *rpc.Client, workerType utils.WorkerType) int {
 
 	var hostname = os.Getenv("HOSTNAME")
@@ -43,6 +44,7 @@ func main() {
 		fmt.Println("Please specify master address and type of tasker:\n\t./worker [addr:port] [reducer/mapper]")
 		os.Exit(1)
 	}
+	// Connection to Master
 	addr := os.Args[1]
 	workerType := utils.DetectTaskType(os.Args[2])
 
@@ -56,6 +58,7 @@ func main() {
 	}
 	defer client.Close()
 
+	// Handler og SIGINT signal
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -65,6 +68,7 @@ func main() {
 		os.Exit(1)
 	}()
 
+	// Registration to Service
 	for {
 		log.Print("Connecting to master server...")
 		reply := askForJoin(addr, client, workerType)

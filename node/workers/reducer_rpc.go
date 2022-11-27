@@ -11,6 +11,7 @@ type Reducer int
 
 var pointsOfCluster []int
 
+// RPC exposed to Master to initiate teh Reduce Task
 func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) error {
 	log.Printf("Processing Cluster #[%d] ", in.ClusterKey)
 
@@ -45,6 +46,7 @@ func (r *Reducer) Reduce(in utils.ReducerInput, reply *utils.ReducerResponse) er
 	return nil
 }
 
+// Ask data from Mapeprs
 func retrieveData(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse {
 	addr := mapper.IP + ":" + cfg.Server.WORKER_PORT
 	client, err := rpc.Dial("tcp", addr)
@@ -63,6 +65,7 @@ func retrieveData(mapper utils.WorkerInfo, clusterKey int) utils.MapperResponse 
 	return reply
 }
 
+// Function that compute the new centroid of cluster
 func recenter(points []utils.Point) []utils.Point {
 
 	var dimension int = len(points[0].Values)
