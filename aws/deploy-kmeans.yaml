@@ -31,6 +31,15 @@
       yum: name=* state=latest
 
     - name: Install Docker
-      shell: /ec2-user/KMeans-MR/aws/docker_install.sh
+      become: true
+      ansible.builtin.yum:
+        name: docker
+        state: present 
+      tags:
+       - docker
+
+    - name: Start docker service
+      become: true
+      ansible.builtin.command: sh {{ remote_app_dir }}/KMeans-MR/aws/docker_install.sh
       tags:
        - docker
